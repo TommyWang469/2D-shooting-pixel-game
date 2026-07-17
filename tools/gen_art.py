@@ -307,6 +307,9 @@ def gen_tiles():
         for x in range(W):
             px[ox + x, y] = WALL_D
     img.save(os.path.join(OUT, "tiles.png"))
+    # also export standalone 16x16 floor + wall tiles for tiled room drawing
+    img.crop((0, 0, W, H)).save(os.path.join(OUT, "floor.png"))
+    img.crop((W, 0, 2 * W, H)).save(os.path.join(OUT, "wall.png"))
 
 
 def main():

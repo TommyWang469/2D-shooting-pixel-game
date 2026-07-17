@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/hongqingwang/Documents/GitHub/2D-shooting-pixel-game/new-game-project/logs/.b9c7a540f9adc5a41b563fc5ef3aaf07daacbb90-audit.json",
+    "files": [
+        {
+            "date": 1784325662954,
+            "name": "/Users/hongqingwang/Documents/GitHub/2D-shooting-pixel-game/new-game-project/logs/mcp-puppeteer-2026-07-17.log",
+            "hash": "98c38d218c0e6f26c954c6ca9789fd9bf67d43e91a2e4105db071187100eebfb"
+        }
+    ],
+    "hashType": "sha256"
+}
