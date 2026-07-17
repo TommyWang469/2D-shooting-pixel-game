@@ -25,10 +25,13 @@ func _ready() -> void:
 	_on_wave_changed(GameManager.wave)
 
 
-## Wire the HUD to a specific player instance.
+## Wire the HUD to a specific player instance and show its current state now.
 func bind_player(player: Node) -> void:
 	player.hp_changed.connect(_on_hp_changed)
 	player.weapon_changed.connect(_on_weapon_changed)
+	_on_hp_changed(player.hp, player.max_hp)
+	if player.weapon:
+		_on_weapon_changed(player.weapon.display_name)
 
 
 func _on_hp_changed(current: int, maximum: int) -> void:

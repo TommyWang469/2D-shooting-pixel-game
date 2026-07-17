@@ -62,12 +62,12 @@ All imported with **nearest** filtering (crisp pixels).
 
 ## Build Order & Progress
 
-- [ ] 1. Generate pixel-art sprite sheets (`tools/gen_art.py`)
-- [ ] 2. Configure project (input map, pixel-perfect window, main scene, autoload)
-- [ ] 3. Player + Weapon + Bullet
-- [ ] 4. Enemies (Slime, Bat) + AI + drops
-- [ ] 5. Pickups + upgrades + HUD + waves + GameManager
-- [ ] 6. Assemble Main scene, launch, fix errors until it runs
+- [x] 1. Generate pixel-art sprite sheets (`tools/gen_art.py`)
+- [x] 2. Configure project (input map, pixel-perfect window, main scene, autoload)
+- [x] 3. Player + Weapon + Bullet
+- [x] 4. Enemies (Slime, Bat) + AI + drops
+- [x] 5. Pickups + upgrades + HUD + waves + GameManager
+- [x] 6. Assemble Main scene, launch, fix errors until it runs
 
 ---
 
@@ -77,3 +77,22 @@ All imported with **nearest** filtering (crisp pixels).
 - Confirmed environment: Godot 4.7 stable, empty starter project, Python 3.12 + PIL 12.2.
 - Approved design: real pixel art + full playable vertical slice.
 - Started build.
+- Generated 12 sprite sheets via `tools/gen_art.py` (player/slime/bat/bullets/coin/heart/crate/floor/wall/muzzle).
+- Wrote all systems: GameManager autoload, Weapon resource, Bullet, Player, Enemy
+  base + Slime/Bat, Pickup, HUD, Spawner, Main.
+- Configured input map (WASD + mouse + R), pixel-perfect Nearest filtering, 480×270
+  base @ 2× window, physics layers.
+- **Verified:** headless import compiled all scripts with 0 errors; ran main scene
+  300 frames headless (past first wave) with 0 errors; windowed run initialized the
+  Metal renderer and rendered cleanly. Game is playable.
+
+### How to run
+Open `new-game-project/` in Godot 4.7 and press F5, or from a terminal:
+`~/Downloads/Godot.app/Contents/MacOS/Godot --path new-game-project`
+To regenerate art: `python3 tools/gen_art.py`
+
+### Ideas for next passes
+- Sound effects + music, screen shake on hit, particle bursts on kill.
+- More enemy types (ranged shooter using `enemy_bullet.png`), a boss.
+- Multiple rooms / door transitions; minimap.
+- More weapon tiers and a proper shop UI at the crate.
