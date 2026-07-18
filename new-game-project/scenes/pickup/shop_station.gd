@@ -81,6 +81,9 @@ func interact(player: Node) -> void:
 	if kind == "workshop" and player.max_weapon_slots >= 3:
 		_deny_msg("Slots full!")
 		return
+	if kind == "life" and player.max_hp >= player.MAX_HP_CAP:
+		_deny_msg("Max HP reached!")
+		return
 	if GameManager.coins < cost:
 		_deny()
 		return

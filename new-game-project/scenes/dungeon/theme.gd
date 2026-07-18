@@ -18,6 +18,8 @@ const CATALOG := [
 		"obstacles": "pillars",
 		"boss_weights": [1.0, 1.5, 0.8],   # ring, summon, charge -> summoner king
 		"roster": [["slime", 0.45], ["bat", 0.35], ["mage", 0.2]],
+		"music": "stone",
+		"boss_name": "THE SUMMONER KING",
 	},
 	{
 		"name": "Ember Depths",
@@ -32,6 +34,8 @@ const CATALOG := [
 		"obstacles": "rocks",
 		"boss_weights": [0.9, 0.7, 1.8],   # charge-mad magma king
 		"roster": [["imp", 0.4], ["spitter", 0.25], ["bat", 0.35]],
+		"music": "ember",
+		"boss_name": "THE MAGMA TYRANT",
 	},
 	{
 		"name": "Frost Crypt",
@@ -46,6 +50,8 @@ const CATALOG := [
 		"obstacles": "ice",
 		"boss_weights": [1.9, 0.8, 0.7],   # bullet-ring frost king
 		"roster": [["ice_slime", 0.4], ["ghost", 0.35], ["mage", 0.25]],
+		"music": "frost",
+		"boss_name": "THE FROZEN WARDEN",
 	},
 ]
 

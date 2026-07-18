@@ -121,8 +121,10 @@ func take_damage(amount: int) -> void:
 
 
 func _die() -> void:
-	died.emit()
+	# Run the base death first: it removes us from the "enemies" group, so the
+	# dungeon's _clear_enemies() (triggered by died) can't double-free the boss.
 	Juice.shake(0.9)
 	Juice.hitstop(0.12, 0.12)
 	_spawn_burst(body_color, 40, 170.0)
 	super._die()
+	died.emit()

@@ -205,7 +205,73 @@ exercising Mage / Boss (damage→death→signals) / chest weapon-swap / portal �
   - **HUD enemy counter** ("3 enemies left", top right) during combat.
 - Portals joined a `portal` group; auto-play re-verified Ch1→Ch3 with the new UI.
 
+### 2026-07-18 — Publish pass (PLAN)
+Goal: take the game from "rich vertical slice" to "publishable". Scope, in order:
+
+**P1 — Menus & UX completeness**
+- Pause menu with real buttons: Resume · Settings · Restart Run · Quit to Title.
+- Settings overlay (usable from pause AND title): Master/Music/SFX volume sliders,
+  fullscreen toggle, screen-shake toggle. Audio moves to real Music/SFX buses.
+- Game-over screen upgrade: run stats + best score ("NEW BEST!"), Restart/Title buttons.
+- Title: version label, best score, Esc quits; char select: proper mouse support
+  (click card to select, click again to confirm), Esc returns to title.
+- Crosshair mouse cursor + custom window icon (both generated in gen_art.py).
+
+**P2 — Persistence & progression arc**
+- `Save` autoload → `user://save.json`: settings + best score/chapter, totals
+  (runs, kills, victories). Applied on boot; written on change/run end.
+- Victory arc: beating the Chapter 3 boss = a WIN (all 3 biomes conquered) →
+  victory screen (+500 score, stats, saved) with Continue-to-Endless / Title.
+- Bosses get names per biome, shown in banner + boss bar.
+
+**P3 — Feel, balance, robustness**
+- Controller support: full joypad input map + right-stick aim (last-used device wins).
+- Per-biome music: 3 generated tracks (stone/ember/frost), switched on chapter change.
+- Balance caps: max HP cap 12 (shrine denies past it), enemy count cap per room,
+  fire-rate floors on mage/spitter so late chapters stay fair; room/boss clear score bonuses.
+- Bug fixes from code review: boss death → freed-callable race, stale-node guards,
+  shrine/bonus-life at HP cap, pause/hitstop interactions.
+- Web/desktop export: switch renderer to gl_compatibility, add export_presets.cfg
+  (macOS / Windows / Web).
+
+**Testing** (every phase): headless import + script compile; frame-run smoke tests
+(`--quit-after`); a temporary autoload driver that plays rooms, forces the victory
+path and round-trips save/load; manual windowed spot-check at the end.
+
+### 2026-07-18 — Publish pass (DONE)
+Everything in the plan above shipped:
+
+- **Menus**: pause menu (Resume/Settings/Restart/Quit-to-Title buttons, focus for
+  keyboard/controller), settings overlay (`scenes/ui/settings_menu.gd`, code-built,
+  shared by pause + title via S), upgraded game-over (stats, best score / NEW BEST,
+  Restart [R] / Title [T] buttons), victory screen, title best-score + version lines,
+  char-select mouse click-to-select/confirm + Esc back.
+- **Persistence**: `autoload/save.gd` → `user://save.json` (volumes, fullscreen,
+  screen shake, best score/chapter, runs/kills/victories). Audio rebuilt on real
+  Music/SFX buses so the sliders work. `Juice.shake` honours the shake toggle.
+- **Victory arc**: Chapter-3 boss → VICTORY (+500, saved) → Endless Mode continues;
+  bosses have names per biome (Summoner King / Magma Tyrant / Frozen Warden) shown
+  in banner + boss bar. Per-biome music: `music_{stone,ember,frost}.wav` generated
+  by gen_audio, crossfaded on chapter change.
+- **Controller support**: full joypad input map (left stick + dpad move, RT shoot,
+  B dash, X interact, Y swap, Start pause) + right-stick aim with last-used-device
+  arbitration in `player.gd`. In-game score readout on the HUD; crosshair mouse
+  cursor + generated 128px app icon (gen_art).
+- **Balance**: max-HP cap 12 (shrine refuses past it; kill-milestone heals instead),
+  16-enemy room cap, fire-rate floors for mage/spitter in deep endless, +25/+150
+  room/boss clear score bonuses.
+- **Bugs found & fixed** (bug hunt): portal/chest/enemy-death did physics-state
+  changes (room collision rebuild, Area2D loot spawns) *inside* physics callbacks —
+  "Can't change this state while flushing queries" spam; all deferred now. Boss
+  death had a freed-callable race with `_clear_enemies()` (reordered + guarded
+  corpse free). Renderer switched Forward+ → **gl_compatibility** (web-exportable);
+  `export_presets.cfg` added (Web / macOS / Windows).
+- **Tests**: `tests/smoke.gd` (22-check driver: save round-trip, pause/settings,
+  ch3 boss → victory → endless → death → run recording) and `tests/combat.gd`
+  (organic bullets-kill-enemies via virtual joystick — also proves controller-aim
+  path). Both temporarily autoloaded during test runs only; **all pass, 0 errors**.
+  Title/char-select boot clean headless.
+
 ### Ideas for further passes
 - Unique boss sprites per chapter; more enemy types; status effects (freeze/burn).
-- A minimap; controller support; settings menu (volume sliders).
-- Destructible obstacles / cover that breaks under fire.
+- A minimap; destructible obstacles / cover that breaks under fire.

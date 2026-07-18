@@ -48,7 +48,8 @@ func _ai_velocity(delta: float) -> Vector2:
 	_shoot_cd -= delta
 	if _shoot_cd <= 0.0 and not GameManager.is_game_over:
 		_shoot(dir)
-		_shoot_cd = randf_range(1.4, 2.2) / GameManager.difficulty()
+		# floor keeps deep endless chapters dodgeable
+		_shoot_cd = maxf(randf_range(1.4, 2.2) / GameManager.difficulty(), 0.55)
 		_cast = 0.25
 	return move
 

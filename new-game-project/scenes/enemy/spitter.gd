@@ -39,7 +39,7 @@ func _ai_velocity(delta: float) -> Vector2:
 	_shoot_cd -= delta
 	if _shoot_cd <= 0.0 and not GameManager.is_game_over:
 		_spit()
-		_shoot_cd = randf_range(1.9, 2.6) / sqrt(GameManager.difficulty())
+		_shoot_cd = maxf(randf_range(1.9, 2.6) / sqrt(GameManager.difficulty()), 0.9)
 	return Vector2.ZERO
 
 

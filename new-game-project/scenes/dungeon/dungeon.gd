@@ -58,7 +58,10 @@ func _begin_room() -> void:
 		_hud.hide_boss()
 	var biome: String = _theme().name
 	if GameManager.is_boss_room():
-		_banner("CHAPTER %d" % GameManager.chapter, "%s  ·  BOSS" % biome, Color(1.0, 0.5, 0.5))
+		var bname: String = _theme().get("boss_name", "BOSS")
+		if _hud and _hud.has_method("set_boss_name"):
+			_hud.set_boss_name(bname)
+		_banner(bname, "%s  ·  Chapter %d" % [biome, GameManager.chapter], Color(1.0, 0.5, 0.5))
 		Audio.play("wave", 0.05, 2.0)
 		_spawn_boss()
 		_state = "boss"
@@ -77,7 +80,7 @@ func _banner(title: String, subtitle: String, color: Color) -> void:
 
 func _spawn_combat() -> void:
 	var d := GameManager.difficulty()
-	var total := 3 + int(round(d * 2.5))
+	var total := mini(3 + int(round(d * 2.5)), 16)   # cap keeps endless fair (and fast)
 	var roster: Array = _theme().roster
 	for i in total:
 		_spawn(ENEMY_SCENES[_pick_from_roster(roster)])
@@ -148,6 +151,7 @@ func _room_cleared(was_boss: bool) -> void:
 	if _state == "transition":
 		return
 	_state = "transition"
+	GameManager.add_score(150 if was_boss else 25)
 	var give_chest := was_boss or randf() < 0.4
 	await get_tree().create_timer(0.7).timeout
 	if GameManager.is_game_over or not is_inside_tree():
@@ -191,7 +195,8 @@ func _on_portal() -> void:
 
 func _clear_enemies() -> void:
 	for e in get_tree().get_nodes_in_group("enemies"):
-		e.queue_free()
+		if is_instance_valid(e) and not e._dying:
+			e.queue_free()
 
 
 func _clear_field() -> void:

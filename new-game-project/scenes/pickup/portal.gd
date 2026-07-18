@@ -38,4 +38,6 @@ func _on_body_entered(body: Node) -> void:
 		return
 	_used = true
 	Audio.play("upgrade", 0.1, -3.0)
-	entered.emit()
+	# Deferred: the listener regenerates room collision, which must not happen
+	# inside the physics flush that delivered this signal.
+	call_deferred("emit_signal", "entered")

@@ -29,18 +29,20 @@ func _ready() -> void:
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	floor_tex = load("res://assets/floor.png")
 	wall_tex = load("res://assets/wall.png")
+	Input.set_custom_mouse_cursor(load("res://assets/crosshair.png"),
+			Input.CURSOR_ARROW, Vector2(7, 7))
 	GameManager.reset_game()
 	hud.bind_player(player)
 	GameManager.room_changed.connect(func(_r): _regen_room())
 	_regen_room()
 	player.global_position = spawn_pos()
-	Audio.play_music()
 
 
 # ================================================================ generation
 func _regen_room() -> void:
 	theme = DungeonTheme.for_chapter(GameManager.chapter)
 	canvas_modulate.color = theme.ambient
+	Audio.play_music(theme.get("music", "stone"))
 	_gen_grid(GameManager.is_boss_room())
 	_build_collision()
 	_place_torches()

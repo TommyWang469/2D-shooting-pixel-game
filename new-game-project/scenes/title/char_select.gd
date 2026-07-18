@@ -17,7 +17,22 @@ func _ready() -> void:
 		var card := _make_card(Character.get_data(id))
 		cards_box.add_child(card)
 		_cards.append(card)
+		var idx := _cards.size() - 1
+		card.mouse_filter = Control.MOUSE_FILTER_STOP
+		card.gui_input.connect(_on_card_input.bind(idx))
 	_select(0)
+
+
+## Click a card to select it; click the selected card again to confirm.
+func _on_card_input(event: InputEvent, idx: int) -> void:
+	if event is InputEventMouseButton and event.pressed \
+			and event.button_index == MOUSE_BUTTON_LEFT:
+		accept_event()
+		if _index == idx:
+			_confirm()
+		else:
+			_select(idx)
+			Audio.play("click")
 
 
 func _make_card(data: Dictionary) -> Control:
@@ -71,13 +86,18 @@ func _select(i: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_right") or event.is_action_pressed("move_right"):
+	if event.is_action_pressed("ui_cancel"):
+		Audio.play("click")
+		get_tree().change_scene_to_file("res://scenes/title/title.tscn")
+	elif event.is_action_pressed("ui_right") or event.is_action_pressed("move_right"):
 		_select(_index + 1)
 		Audio.play("click")
 	elif event.is_action_pressed("ui_left") or event.is_action_pressed("move_left"):
 		_select(_index - 1)
 		Audio.play("click")
-	elif event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed):
+	elif event.is_action_pressed("ui_accept") \
+			or (event is InputEventMouseButton and event.pressed
+				and event.button_index == MOUSE_BUTTON_LEFT):
 		_confirm()
 
 

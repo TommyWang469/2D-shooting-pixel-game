@@ -47,7 +47,12 @@ func _on_body_entered(body: Node) -> void:
 	Audio.play("upgrade", 0.1, -3.0)
 	if _weapon == null:
 		_weapon = Weapon.random_reward(body.weapon_power(), body.weapon_id())
-	# Drop the reward on the ground so the player can choose to take it.
+	# Deferred: spawning an Area2D inside this physics callback is not allowed.
+	call_deferred("_drop_reward")
+
+
+## Drop the reward on the ground so the player can choose to take it.
+func _drop_reward() -> void:
 	var wp := WEAPON_PICKUP.instantiate()
 	var world := get_tree().current_scene
 	if world:

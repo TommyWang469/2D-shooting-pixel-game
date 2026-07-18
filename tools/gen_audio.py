@@ -152,33 +152,47 @@ def build_sfx():
     write_wav(os.path.join(SFX, "click.wav"), tone(900, 600, 0.05, "square", 0.25))
 
 
-def build_music():
-    """A short, low, loopable dungeon groove: bass + arp over a i-VI-III-VII minor
-    progression in A minor. Kept quiet; the Audio bus lowers it further."""
-    random.seed(3)
-    bpm = 108
+def build_track(fname, bpm, roots, bass_kind, bass_vol, arp_kind, arp_vol, arp_pat,
+                arp_octave=4):
+    """A short, low, loopable groove: per-bar root bass + arpeggio. Each biome
+    passes its own tempo, progression, waveforms and arp pattern."""
     beat = 60.0 / bpm
     step = beat / 2.0  # eighth notes
-    # chord roots for 4 bars (A minor feel)
-    roots = ["A", "F", "C", "G"]
-    arp_pat = [0, 3, 7, 12, 7, 3, 7, 3]  # semitone offsets from root
     track = []
     for root in roots:
         base = note(root, 2)
-        bar = []
-        # bass: root note held, plucked each beat
         bass_layer = []
         for b in range(4):
-            bass_layer.extend(tone(base, base, beat, "tri", 0.16))
-        # arp: eighth notes
+            bass_layer.extend(tone(base, base, beat, bass_kind, bass_vol))
         arp_layer = []
-        rn = note(root, 4)
+        rn = note(root, arp_octave)
         for s in range(8):
-            f = rn * (2 ** (arp_pat[s] / 12.0))
-            arp_layer.extend(tone(f, f, step, "square", 0.09, decay=True))
-        bar = mix(bass_layer, arp_layer)
-        track.extend(bar)
-    write_wav(os.path.join(ASSETS, "music.wav"), track)
+            off = arp_pat[s]
+            if off is None:  # rest
+                arp_layer.extend([0.0] * int(step * SR))
+                continue
+            f = rn * (2 ** (off / 12.0))
+            arp_layer.extend(tone(f, f, step, arp_kind, arp_vol, decay=True))
+        track.extend(mix(bass_layer, arp_layer))
+    write_wav(os.path.join(ASSETS, fname), track)
+
+
+def build_music():
+    """Three loopable biome tracks + the title theme (stone doubles as title)."""
+    random.seed(3)
+    # Stone Halls — mid-tempo A-minor groove (also the title theme).
+    build_track("music_stone.wav", 108, ["A", "F", "C", "G"],
+                "tri", 0.16, "square", 0.09, [0, 3, 7, 12, 7, 3, 7, 3])
+    # Ember Depths — faster, buzzier D-minor drive.
+    build_track("music_ember.wav", 132, ["D", "A#", "F", "C"],
+                "saw", 0.13, "square", 0.10, [0, 12, 7, 12, 3, 12, 7, 10])
+    # Frost Crypt — slow, airy E-minor shimmer with rests.
+    build_track("music_frost.wav", 84, ["E", "C", "G", "D"],
+                "tri", 0.14, "sine", 0.11, [0, None, 7, None, 12, None, 3, None],
+                arp_octave=5)
+    # Keep legacy music.wav (title fallback) in sync with the stone track.
+    build_track("music.wav", 108, ["A", "F", "C", "G"],
+                "tri", 0.16, "square", 0.09, [0, 3, 7, 12, 7, 3, 7, 3])
 
 
 def main():

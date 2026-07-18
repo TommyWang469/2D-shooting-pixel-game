@@ -767,6 +767,35 @@ def gen_torch():
     img.save(os.path.join(OUT, "torch.png"))
 
 
+# ---------------------------------------------------------------- crosshair 15x15
+def gen_crosshair():
+    # Open-center crosshair cursor: 4 ticks + corner dots, white with dark outline.
+    W = H = 15
+    img = Image.new("RGBA", (W, H), T)
+    px = img.load()
+    c = W // 2
+    for i in range(2, 6):
+        px[c, i] = WHITE            # top tick
+        px[c, H - 1 - i] = WHITE    # bottom
+        px[i, c] = WHITE            # left
+        px[W - 1 - i, c] = WHITE    # right
+    px[c, c] = (255, 255, 255, 90)  # faint center dot
+    outline(px, W, H, 0, 0)
+    img.save(os.path.join(OUT, "crosshair.png"))
+
+
+# ---------------------------------------------------------------- app icon 128x128
+def gen_icon():
+    # Window/app icon: gunner hero frame 0 on a dark rounded tile, 8x nearest upscale.
+    tile = Image.new("RGBA", (16, 16), (26, 22, 38, 255))
+    tpx = tile.load()
+    for x, y in [(0, 0), (15, 0), (0, 15), (15, 15)]:
+        tpx[x, y] = T               # knock out corners for a rounded feel
+    hero = Image.open(os.path.join(OUT, "player.png")).crop((0, 0, 16, 16))
+    tile.alpha_composite(hero)
+    tile.resize((128, 128), Image.NEAREST).save(os.path.join(OUT, "icon.png"))
+
+
 def main():
     gen_heroes()
     gen_imp()
@@ -791,6 +820,8 @@ def main():
     gen_chest()
     gen_weapon_icon()
     gen_torch()
+    gen_crosshair()
+    gen_icon()
     print("Generated art in", OUT)
     for f in sorted(os.listdir(OUT)):
         if f.endswith(".png"):

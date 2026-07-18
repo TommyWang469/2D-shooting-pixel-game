@@ -123,7 +123,9 @@ func _die() -> void:
 	set_physics_process(false)
 	remove_from_group("enemies")
 	GameManager.register_kill()
-	_drop_loot()
+	# Deferred: death often happens inside a bullet's physics callback, where
+	# spawning pickup Areas would be rejected by the physics server.
+	call_deferred("_drop_loot")
 	_spawn_burst(body_color, 12, 95.0)
 	Audio.play("die")
 	Juice.shake(0.22)
@@ -131,7 +133,10 @@ func _die() -> void:
 	velocity = Vector2.ZERO
 	sprite.modulate = base_tint
 	sprite.frame = death_frame
-	get_tree().create_timer(0.25).timeout.connect(queue_free)
+	# Guarded free: something else (room sweep) may have freed us mid-corpse.
+	get_tree().create_timer(0.25).timeout.connect(func():
+		if is_instance_valid(self):
+			queue_free())
 
 
 func _drop_loot() -> void:

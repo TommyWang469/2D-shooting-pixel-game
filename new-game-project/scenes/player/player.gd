@@ -12,6 +12,8 @@ const DASH_TIME := 0.16
 const IFRAME_TIME := 0.8
 const MUZZLE_DIST := 9.0
 const KNOCK_DECAY := 620.0
+const MAX_HP_CAP := 12
+const JOY_AIM_DEADZONE := 0.35
 
 const BULLET := preload("res://scenes/bullet/bullet.tscn")
 const FLOAT := preload("res://scenes/fx/floating_text.tscn")
@@ -51,6 +53,8 @@ var _ghost_cd := 0.0
 var _anim_time := 0.0
 var _frame_index := 0
 var _muzzle_tex: Texture2D
+var _use_joy_aim := false
+var _last_mouse_pos := Vector2.INF
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -90,9 +94,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 
-	var to_mouse := get_global_mouse_position() - global_position
-	if to_mouse.length() > 1.0:
-		aim_dir = to_mouse.normalized()
+	_update_aim()
 	sprite.flip_h = aim_dir.x < 0.0
 
 	var input := Vector2(
@@ -131,6 +133,24 @@ func _physics_process(delta: float) -> void:
 		_fire_cd = 1.0 / rate
 
 	_animate(delta, input.length() > 0.1)
+
+
+## Mouse aims by default; the right stick takes over while it's pushed, and keeps
+## priority until the mouse actually moves again (last-used-device wins).
+func _update_aim() -> void:
+	var joy := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+	var mouse_screen := get_viewport().get_mouse_position()
+	if joy.length() > JOY_AIM_DEADZONE:
+		aim_dir = joy.normalized()
+		_use_joy_aim = true
+	elif _use_joy_aim and _last_mouse_pos != Vector2.INF \
+			and mouse_screen.distance_to(_last_mouse_pos) > 6.0:
+		_use_joy_aim = false
+	if not _use_joy_aim:
+		var to_mouse := get_global_mouse_position() - global_position
+		if to_mouse.length() > 1.0:
+			aim_dir = to_mouse.normalized()
+	_last_mouse_pos = mouse_screen
 
 
 func _update_timers(delta: float) -> void:
@@ -281,17 +301,23 @@ func heal(amount: int) -> void:
 	_spawn_float("+%d" % amount, Color(0.5, 1.0, 0.6), 14)
 
 
-func gain_max_hp() -> void:
+## Returns false once the HP cap is reached (shrine uses this to refuse the sale).
+func gain_max_hp() -> bool:
+	if max_hp >= MAX_HP_CAP:
+		return false
 	max_hp += 1
 	hp = max_hp
 	hp_changed.emit(hp, max_hp)
 	Audio.play("heart", 0.05, 2.0)
 	_spawn_float("+1 LIFE", Color(1.0, 0.8, 0.3), 14)
 	_pickup_pop(Color(1.0, 0.5, 0.6))
+	return true
 
 
 func _on_bonus_life() -> void:
-	gain_max_hp()
+	# At the cap the kill milestone still rewards a full heal.
+	if not gain_max_hp():
+		heal(max_hp)
 
 
 func switch_weapon(new_weapon: Weapon) -> void:

@@ -10,9 +10,12 @@ signal chapter_changed(chapter: int)
 signal room_changed(room: int)
 signal bonus_life
 signal game_over_triggered
+signal victory_triggered
 
 const KILLS_PER_LIFE := 10
 const ROOMS_PER_CHAPTER := 4        ## room == ROOMS_PER_CHAPTER is the boss room
+const FINAL_CHAPTER := 3            ## beating this chapter's boss wins the run
+const VICTORY_BONUS := 500
 
 var coins := 0
 var kills := 0
@@ -20,6 +23,8 @@ var score := 0
 var chapter := 1
 var room := 1
 var is_game_over := false
+var has_won := false           ## victory reached this run (endless continues after)
+var last_run_new_best := false ## set when the run ends; read by the game-over UI
 var character_id := "gunner"   ## chosen on the select screen; persists across restarts
 
 
@@ -30,6 +35,8 @@ func reset_game() -> void:
 	chapter = 1
 	room = 1
 	is_game_over = false
+	has_won = false
+	last_run_new_best = false
 	Engine.time_scale = 1.0
 	coins_changed.emit(coins)
 	kills_changed.emit(kills)
@@ -42,6 +49,11 @@ func add_coins(amount: int) -> void:
 	coins += amount
 	score += amount
 	coins_changed.emit(coins)
+	score_changed.emit(score)
+
+
+func add_score(points: int) -> void:
+	score += points
 	score_changed.emit(score)
 
 
@@ -67,8 +79,13 @@ func is_boss_room() -> bool:
 
 
 ## Move to the next room, rolling into a new (harder) chapter after the boss.
+## Beating the FINAL_CHAPTER boss triggers victory once; play continues (endless).
 func advance() -> void:
 	if room >= ROOMS_PER_CHAPTER:
+		if chapter >= FINAL_CHAPTER and not has_won:
+			has_won = true
+			add_score(VICTORY_BONUS)
+			victory_triggered.emit()
 		chapter += 1
 		room = 1
 		chapter_changed.emit(chapter)
@@ -87,4 +104,11 @@ func trigger_game_over() -> void:
 	if is_game_over:
 		return
 	is_game_over = true
+	last_run_new_best = Save.record_run(score, chapter, kills, has_won)
 	game_over_triggered.emit()
+
+
+## A run abandoned from the pause menu still counts toward lifetime stats.
+func abandon_run() -> void:
+	if not is_game_over and (kills > 0 or score > 0):
+		last_run_new_best = Save.record_run(score, chapter, kills, has_won)

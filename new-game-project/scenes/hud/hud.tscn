@@ -76,6 +76,16 @@ theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 1)
 theme_override_font_sizes/font_size = 10
 text = "DASH"
 
+[node name="ScoreLabel" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 82.0
+offset_right = 140.0
+offset_bottom = 98.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.75, 0.82, 0.95, 1)
+theme_override_font_sizes/font_size = 11
+text = "Score 0"
+
 [node name="ChapterLabel" type="Label" parent="."]
 anchor_left = 1.0
 anchor_right = 1.0
@@ -158,7 +168,7 @@ offset_bottom = -6.0
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.5)
 theme_override_font_sizes/font_size = 11
-text = "WASD move · Mouse aim · Click shoot · Space dash · E pick up / buy · Q cycle weapons"
+text = "WASD move · Mouse aim · Click shoot · Space dash · E pick up / buy · Q cycle weapons · Esc pause"
 
 [node name="Banner" type="Control" parent="."]
 anchor_right = 1.0
@@ -203,18 +213,92 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -140.0
-offset_top = -85.0
-offset_right = 140.0
-offset_bottom = 85.0
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = 100.0
 
 [node name="Final" type="Label" parent="GameOver/Panel"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-theme_override_font_sizes/font_size = 17
+offset_bottom = -40.0
+theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "GAME OVER"
+
+[node name="Buttons" type="HBoxContainer" parent="GameOver/Panel"]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -110.0
+offset_top = -36.0
+offset_right = 110.0
+offset_bottom = -12.0
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="RestartBtn" type="Button" parent="GameOver/Panel/Buttons"]
+custom_minimum_size = Vector2(96, 0)
+theme_override_font_sizes/font_size = 12
+text = "Restart  [R]"
+
+[node name="TitleBtn" type="Button" parent="GameOver/Panel/Buttons"]
+custom_minimum_size = Vector2(96, 0)
+theme_override_font_sizes/font_size = 12
+text = "Title  [T]"
+
+[node name="Victory" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Dim" type="ColorRect" parent="Victory"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.03, 0.02, 0.7)
+
+[node name="Panel" type="Panel" parent="Victory"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -105.0
+offset_right = 160.0
+offset_bottom = 105.0
+
+[node name="Text" type="Label" parent="Victory/Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -40.0
+theme_override_colors/font_color = Color(1, 0.92, 0.6, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "VICTORY!"
+
+[node name="Buttons" type="HBoxContainer" parent="Victory/Panel"]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -130.0
+offset_top = -36.0
+offset_right = 130.0
+offset_bottom = -12.0
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="ContinueBtn" type="Button" parent="Victory/Panel/Buttons"]
+custom_minimum_size = Vector2(120, 0)
+theme_override_font_sizes/font_size = 12
+text = "Endless Mode"
+
+[node name="VTitleBtn" type="Button" parent="Victory/Panel/Buttons"]
+custom_minimum_size = Vector2(96, 0)
+theme_override_font_sizes/font_size = 12
+text = "Title"
 
 [node name="Pause" type="Control" parent="."]
 anchor_right = 1.0
@@ -225,12 +309,42 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0, 0, 0, 0.55)
 
-[node name="Label" type="Label" parent="Pause"]
+[node name="Panel" type="Panel" parent="Pause"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -85.0
+offset_top = -88.0
+offset_right = 85.0
+offset_bottom = 88.0
+
+[node name="VBox" type="VBoxContainer" parent="Pause/Panel"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-theme_override_font_sizes/font_size = 22
-horizontal_alignment = 1
-vertical_alignment = 1
-text = "PAUSED
+offset_left = 14.0
+offset_top = 12.0
+offset_right = -14.0
+offset_bottom = -12.0
+theme_override_constants/separation = 8
 
-Esc to resume"
+[node name="Title" type="Label" parent="Pause/Panel/VBox"]
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "PAUSED"
+
+[node name="ResumeBtn" type="Button" parent="Pause/Panel/VBox"]
+theme_override_font_sizes/font_size = 12
+text = "Resume  [Esc]"
+
+[node name="SettingsBtn" type="Button" parent="Pause/Panel/VBox"]
+theme_override_font_sizes/font_size = 12
+text = "Settings"
+
+[node name="RestartBtn" type="Button" parent="Pause/Panel/VBox"]
+theme_override_font_sizes/font_size = 12
+text = "Restart Run"
+
+[node name="QuitBtn" type="Button" parent="Pause/Panel/VBox"]
+theme_override_font_sizes/font_size = 12
+text = "Quit to Title"

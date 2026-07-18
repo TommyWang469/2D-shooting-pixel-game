@@ -8,6 +8,8 @@ func _ready() -> void:
 
 ## Add screen shake. amount ~0.2 small, ~0.5 medium, ~0.8 big.
 func shake(amount: float) -> void:
+	if not Save.screen_shake:
+		return
 	var cam := get_tree().get_first_node_in_group("camera")
 	if cam and cam.has_method("add_trauma"):
 		cam.add_trauma(amount)
