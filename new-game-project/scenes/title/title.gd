@@ -36,4 +36,4 @@ func _unhandled_input(event: InputEvent) -> void:
 		start = true
 	if start:
 		Audio.play("click")
-		get_tree().change_scene_to_file("res://scenes/main/main.tscn")
+		get_tree().change_scene_to_file("res://scenes/title/char_select.tscn")

@@ -61,14 +61,14 @@ func _ready() -> void:
 
 func _apply_character() -> void:
 	var ch := Character.get_data(GameManager.character_id)
-	max_hp = ch.max_hp
+	max_hp = ch["max_hp"]
 	hp = max_hp
-	_speed = ch.speed
-	_dash_cooldown = ch.dash_cooldown
-	_fire_rate_mult = ch.fire_rate_mult
-	_tint = ch.tint
+	_speed = ch["speed"]
+	_dash_cooldown = ch["dash_cooldown"]
+	_fire_rate_mult = ch["fire_rate_mult"]
+	_tint = ch["tint"]
 	sprite.modulate = _tint
-	weapon = Weapon.by_id(ch.start_weapon)
+	weapon = Weapon.by_id(ch["start_weapon"])
 
 
 func _physics_process(delta: float) -> void:

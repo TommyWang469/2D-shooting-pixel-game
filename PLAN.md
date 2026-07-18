@@ -123,7 +123,23 @@ New architecture nodes: `autoload/{audio,juice}.gd`, `scenes/dungeon/dungeon.gd`
 **Verified:** clean headless import; 550-frame combat run + a dedicated smoke test
 exercising Mage / Boss (damage→death→signals) / chest weapon-swap / portal — all 0 errors.
 
+### 2026-07-17 — Systems pass (depth)
+- **Character select** (`scenes/title/char_select`): Gunner / Knight / Rogue, each with
+  different HP, speed, dash cooldown, fire rate, starting weapon, and colour tint.
+  Flow is now Title → Character Select → run. Choice lives on `GameManager.character_id`.
+- **Weapons are ground items now.** Opening a chest **drops** the reward on the floor;
+  press **E** near a weapon to equip it, which **drops your current weapon where it lay**
+  — nothing is lost and you can pick old weapons back up (`scenes/pickup/weapon_pickup`).
+- **Boss-room shop** (`scenes/pickup/shop_station`): after the boss, a **Life Shrine**
+  (coins → +1 max HP) and a **Weapon Forge** (coins → a new weapon on the floor) appear
+  next to the reward chest; costs rise per purchase.
+- **Loot is random & independent** — coins and hearts roll separately per kill (not
+  guaranteed), and each combat room also scatters a little loot of its own.
+- **Rooms have obstacles** — each non-boss room generates 3–6 stone blocks (collide with
+  player/enemies/bullets), regenerated per room; boss rooms stay open arenas.
+- New input: **E / F** = interact. Player logic centralised via an `interactables` group.
+
 ### Ideas for further passes
-- Per-chapter enemy/boss variety and unique boss sprites.
-- A minimap, more weapons, status effects (freeze/burn), elite enemies.
-- Controller support; settings menu (volume sliders).
+- Unique boss sprites per chapter; more enemy types; status effects (freeze/burn).
+- A minimap; controller support; settings menu (volume sliders).
+- Destructible obstacles / cover that breaks under fire.

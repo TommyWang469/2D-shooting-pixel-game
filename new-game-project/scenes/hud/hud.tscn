@@ -145,7 +145,7 @@ offset_bottom = -6.0
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.5)
 theme_override_font_sizes/font_size = 11
-text = "WASD move · Mouse aim · Click shoot · Space/RMB dash · walk into chest for a weapon"
+text = "WASD move · Mouse aim · Click shoot · Space dash · E swap weapon / buy"
 
 [node name="Banner" type="Control" parent="."]
 anchor_right = 1.0
