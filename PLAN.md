@@ -91,8 +91,39 @@ Open `new-game-project/` in Godot 4.7 and press F5, or from a terminal:
 `~/Downloads/Godot.app/Contents/MacOS/Godot --path new-game-project`
 To regenerate art: `python3 tools/gen_art.py`
 
-### Ideas for next passes
-- Sound effects + music, screen shake on hit, particle bursts on kill.
-- More enemy types (ranged shooter using `enemy_bullet.png`), a boss.
-- Multiple rooms / door transitions; minimap.
-- More weapon tiers and a proper shop UI at the crate.
+### 2026-07-17 — Polish pass (major)
+Turned the vertical slice into a thoughtful, juicy roguelite.
+
+**Game feel**
+- `Juice` autoload: trauma-based **screen shake** (`camera.gd` on the player camera) + **hit-stop** (time-freeze on impactful hits).
+- **Knockback** on enemies (bullets) and player (on hurt); i-frames + blink.
+- **Muzzle flash**, **impact sparks** + **death particle bursts** (`fx/burst`), **floating combat text** (`fx/floating_text`) for damage / coins / weapon names / "LIFE UP!".
+- **Drop shadows** under player and all enemies; **coin/heart magnet**.
+
+**Audio** (procedural, `tools/gen_audio.py` — pure-Python WAV synth)
+- SFX: shoot, hit, hurt, die, coin, heart, upgrade, wave, dash, gameover, click.
+- Looping chiptune **music** track. `Audio` autoload with a pooled player + random pitch.
+
+**Gameplay depth**
+- **Dash** (Space / RMB): burst + i-frames + afterimage trail + cooldown meter.
+- **Weapon system overhaul** — distinct weapons (Blaster, SMG, Triple, Shotgun, Piercer, Cannon) with pierce / knockback / colored bullets.
+- **Treasure chests** swap you to a new, more powerful weapon.
+- **Ranged Mage** enemy (keeps distance, casts `enemy_bullet`s).
+- **Chapters → 3 combat rooms + a Boss room.** Boss has a health bar and cycles ring / summon / charge attacks; each chapter is harder and retinted. **Portals** advance rooms.
+
+**Screens / UI**
+- **Title screen** (new entry scene) with bobbing hero + music.
+- **Pause** (Esc). Polished **HUD**: hearts, coin icon+count, weapon, dash meter, chapter/room, animated **room/boss banners**, boss bar, **low-HP red vignette**, game-over with run stats.
+- **Atmosphere**: dim `CanvasModulate`, four wall **torches** with flame particles + additive glow.
+
+New architecture nodes: `autoload/{audio,juice}.gd`, `scenes/dungeon/dungeon.gd`,
+`scenes/enemy/{mage,boss}.*`, `scenes/pickup/{chest,portal}.*`, `scenes/fx/*`,
+`scenes/title/*`, `scenes/bullet/enemy_bullet.*`, `scenes/player/camera.gd`.
+
+**Verified:** clean headless import; 550-frame combat run + a dedicated smoke test
+exercising Mage / Boss (damage→death→signals) / chest weapon-swap / portal — all 0 errors.
+
+### Ideas for further passes
+- Per-chapter enemy/boss variety and unique boss sprites.
+- A minimap, more weapons, status effects (freeze/burn), elite enemies.
+- Controller support; settings menu (volume sliders).
