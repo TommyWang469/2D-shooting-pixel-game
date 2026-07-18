@@ -14,3 +14,4 @@
 {"ts":"2026-07-18T18:25:03.403Z","hook":"iteration-context","action":"skip","iterationCount":10,"reason":"no-tsv"}
 {"ts":"2026-07-18T18:38:16.835Z","hook":"dev-rules-reminder","action":"inject","iterationCount":10}
 {"ts":"2026-07-18T18:38:16.845Z","hook":"iteration-context","action":"skip","iterationCount":11}
+{"ts":"2026-07-18T18:55:18.711Z","hook":"stop-notify","projectName":"new-game-project","duration":"unknown","iterations":0}
