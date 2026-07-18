@@ -1,0 +1,143 @@
+extends Node
+## Runs the dungeon: spawns each room's enemies (or the chapter boss in the final
+## room), detects clears, then drops a treasure chest and/or an exit portal. Stepping
+## into the portal advances the room/chapter and starts the next, harder fight.
+
+const SLIME := preload("res://scenes/enemy/slime.tscn")
+const BAT := preload("res://scenes/enemy/bat.tscn")
+const MAGE := preload("res://scenes/enemy/mage.tscn")
+const BOSS := preload("res://scenes/enemy/boss.tscn")
+const CHEST := preload("res://scenes/pickup/chest.tscn")
+const PORTAL := preload("res://scenes/pickup/portal.tscn")
+
+@export var room_rect := Rect2(24, 24, 592, 336)
+
+var _state := "idle"          # idle / combat / boss / transition
+var _hud: Node
+var _player: Node2D
+
+
+func _ready() -> void:
+	_player = get_tree().get_first_node_in_group("player")
+	_hud = get_tree().get_first_node_in_group("hud")
+	_start_after(1.2)
+
+
+func _process(_delta: float) -> void:
+	if GameManager.is_game_over:
+		return
+	if _state == "combat" and get_tree().get_nodes_in_group("enemies").is_empty():
+		_room_cleared(false)
+
+
+func _start_after(delay: float) -> void:
+	_state = "transition"
+	await get_tree().create_timer(delay).timeout
+	if GameManager.is_game_over or not is_inside_tree():
+		return
+	_begin_room()
+
+
+func _begin_room() -> void:
+	if _hud and _hud.has_method("hide_boss"):
+		_hud.hide_boss()
+	if GameManager.is_boss_room():
+		_banner("CHAPTER %d" % GameManager.chapter, "!  BOSS  !", Color(1.0, 0.5, 0.5))
+		Audio.play("wave", 0.05, 2.0)
+		_spawn_boss()
+		_state = "boss"
+	else:
+		_banner("CHAPTER %d" % GameManager.chapter, "Room %d" % GameManager.room, Color(0.8, 0.9, 1.0))
+		Audio.play("wave", 0.08, -3.0)
+		_spawn_combat()
+		_state = "combat"
+
+
+func _banner(title: String, subtitle: String, color: Color) -> void:
+	if _hud and _hud.has_method("show_banner"):
+		_hud.show_banner(title, subtitle, color)
+
+
+func _spawn_combat() -> void:
+	var d := GameManager.difficulty()
+	var total := 3 + int(round(d * 2.5))
+	for i in total:
+		var r := randf()
+		var scene := SLIME
+		if d > 1.3 and r < 0.22:
+			scene = MAGE
+		elif r < 0.5:
+			scene = BAT
+		_spawn(scene)
+
+
+func _spawn_boss() -> void:
+	var b := BOSS.instantiate()
+	var world := get_tree().current_scene
+	world.add_child(b)
+	b.global_position = Vector2(room_rect.get_center().x, room_rect.position.y + 64)
+	if _hud and _hud.has_method("show_boss"):
+		b.health_changed.connect(_hud.show_boss)
+	b.died.connect(_on_boss_died)
+
+
+func _spawn(scene: PackedScene) -> void:
+	var e := scene.instantiate()
+	get_tree().current_scene.add_child(e)
+	e.global_position = _rand_pos()
+
+
+func _rand_pos() -> Vector2:
+	for _i in 24:
+		var p := Vector2(
+			randf_range(room_rect.position.x, room_rect.end.x),
+			randf_range(room_rect.position.y, room_rect.end.y)
+		)
+		if _player == null or not is_instance_valid(_player) \
+				or p.distance_to(_player.global_position) > 95.0:
+			return p
+	return room_rect.get_center()
+
+
+func _on_boss_died() -> void:
+	if _state != "boss":
+		return
+	_clear_enemies()
+	_room_cleared(true)
+
+
+func _room_cleared(was_boss: bool) -> void:
+	if _state == "transition":
+		return
+	_state = "transition"
+	var give_chest := was_boss or randf() < 0.4
+	await get_tree().create_timer(0.7).timeout
+	if GameManager.is_game_over or not is_inside_tree():
+		return
+	if give_chest:
+		var c := CHEST.instantiate()
+		get_tree().current_scene.add_child(c)
+		c.global_position = room_rect.get_center()
+	var p := PORTAL.instantiate()
+	get_tree().current_scene.add_child(p)
+	p.global_position = Vector2(room_rect.get_center().x, room_rect.position.y + 44)
+	p.entered.connect(_on_portal)
+
+
+func _on_portal() -> void:
+	_clear_field()
+	GameManager.advance()
+	if _player and is_instance_valid(_player):
+		_player.global_position = room_rect.get_center() + Vector2(0, 70)
+	_start_after(0.7)
+
+
+func _clear_enemies() -> void:
+	for e in get_tree().get_nodes_in_group("enemies"):
+		e.queue_free()
+
+
+func _clear_field() -> void:
+	_clear_enemies()
+	for n in get_tree().get_nodes_in_group("transient"):
+		n.queue_free()

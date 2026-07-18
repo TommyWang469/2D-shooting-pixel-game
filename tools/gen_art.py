@@ -6,6 +6,7 @@ Run:  python3 tools/gen_art.py
 Output: new-game-project/assets/*.png
 """
 import os
+import math
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -312,10 +313,243 @@ def gen_tiles():
     img.crop((W, 0, 2 * W, H)).save(os.path.join(OUT, "wall.png"))
 
 
+MAGE = (110, 120, 220, 255)
+MAGE_D = (70, 80, 170, 255)
+MAGE_HAT = (60, 60, 120, 255)
+GEM = (120, 230, 240, 255)
+
+
+# ---------------------------------------------------------------- mage 16x16 x4
+def gen_mage():
+    W = H = 16
+    img = new_sheet(4, W, H)
+    px = img.load()
+    C = {"m": MAGE, "M": MAGE_D, "h": MAGE_HAT, "s": SKIN, "g": GEM,
+         "w": WHITE, "k": BLACK}
+
+    def draw(fi, arm_up, gem_bright):
+        ox = fi * W
+        # pointy hat
+        hat = [
+            "....h....",
+            "...hhh...",
+            "..hhhhh..",
+            ".hhhhhhh.",
+        ]
+        blit(px, ox + 3, 1, hat, C)
+        # face
+        blit(px, ox + 5, 5, ["sss", "sws"], C)
+        # robe
+        robe = [
+            ".mmmmm.",
+            "mmMMMmm",
+            "mmMMMmm",
+            "mMMMMMm",
+            ".mMMMm.",
+        ]
+        blit(px, ox + 4, 7, robe, C)
+        # staff with gem (right side), raised when casting
+        sy = 5 if arm_up else 7
+        gcol = WHITE if gem_bright else GEM
+        px[ox + 12, sy] = gcol
+        px[ox + 12, sy + 1] = GEM
+        for y in range(sy + 1, 13):
+            px[ox + 12, y] = WOOD
+        outline(px, W, H, ox, 0)
+
+    draw(0, False, False)
+    draw(1, False, True)
+    draw(2, True, True)     # casting
+    # death frame 3: crumpled robe
+    ox = 3 * W
+    for y in range(11, 15):
+        for x in range(4, 12):
+            if (x + y) % 2 == 0:
+                px[ox + x, y] = MAGE_D
+    outline(px, W, H, ox, 0)
+    img.save(os.path.join(OUT, "mage.png"))
+
+
+# ---------------------------------------------------------------- soft fx dots
+def gen_shadow():
+    W, H = 16, 8
+    img = Image.new("RGBA", (W, H), T)
+    px = img.load()
+    cx, cy = 7.5, 3.5
+    for y in range(H):
+        for x in range(W):
+            dx = (x - cx) / 7.5
+            dy = (y - cy) / 3.5
+            d = dx * dx + dy * dy
+            if d <= 1.0:
+                a = int((1.0 - d) * 110)
+                px[x, y] = (0, 0, 0, a)
+    img.save(os.path.join(OUT, "shadow.png"))
+
+
+def gen_spark():
+    S = 6
+    img = Image.new("RGBA", (S, S), T)
+    px = img.load()
+    c = (S - 1) / 2.0
+    for y in range(S):
+        for x in range(S):
+            d = math.hypot(x - c, y - c) / (c + 0.5)
+            if d <= 1.0:
+                a = int((1.0 - d) * 255)
+                px[x, y] = (255, 255, 255, a)
+    img.save(os.path.join(OUT, "spark.png"))
+
+
+def gen_glow():
+    S = 64
+    img = Image.new("RGBA", (S, S), T)
+    px = img.load()
+    c = (S - 1) / 2.0
+    for y in range(S):
+        for x in range(S):
+            d = math.hypot(x - c, y - c) / c
+            if d <= 1.0:
+                a = int((1.0 - d) ** 2 * 255)
+                px[x, y] = (255, 255, 255, a)
+    img.save(os.path.join(OUT, "glow.png"))
+
+
+# ---------------------------------------------------------------- boss 32x32 x4
+def gen_boss():
+    W = H = 32
+    img = new_sheet(4, W, H)
+    px = img.load()
+
+    def draw(fi, squash, glow):
+        ox = fi * W
+        top = 10 + squash
+        bw = 24 - squash
+        left = ox + (W - bw) // 2
+        for y in range(top, 29):
+            for x in range(bw):
+                col = SLIME if y < 25 else SLIME_D
+                if glow and (x + y) % 3 == 0:
+                    col = (200, 255, 160, 255)
+                px[left + x, y] = col
+        # highlight
+        for x in range(3, 9):
+            px[left + x, top + 2] = SLIME_L
+        # crown
+        crown = ["y.y.y.y", "yyyyyyy"]
+        blit(px, left + bw // 2 - 3, top - 3, crown, {"y": GOLD})
+        for x in range(bw // 2 - 3, bw // 2 + 4):
+            px[ox + (W - bw) // 2 + x, top - 1] = GOLD_D
+        # angry eyes
+        ey = top + 6
+        for e in (left + 6, left + bw - 8):
+            px[e, ey] = WHITE
+            px[e + 1, ey] = WHITE
+            px[e, ey + 1] = RED if glow else BLACK
+            px[e + 1, ey + 1] = RED if glow else BLACK
+        # mouth
+        for x in range(left + 9, left + bw - 8):
+            px[x, top + 11] = BLACK
+        outline(px, W, H, ox, 0)
+
+    draw(0, 0, False)
+    draw(1, 3, False)
+    draw(2, -1, True)     # attacking / charged
+    # death frame 3: collapsed puddle
+    ox = 3 * W
+    for y in range(24, 30):
+        for x in range(4, 28):
+            if (x + y) % 2 == 0:
+                px[ox + x, y] = SLIME_D
+    for x in range(6, 26):
+        px[ox + x, 27] = SLIME
+    outline(px, W, H, ox, 0)
+    img.save(os.path.join(OUT, "boss.png"))
+
+
+# ---------------------------------------------------------------- portal 24x24 x4
+def gen_portal():
+    W = H = 24
+    img = new_sheet(4, W, H)
+    px = img.load()
+    c = 11.5
+    cols = [(120, 90, 230, 255), (150, 120, 250, 255),
+            (190, 160, 255, 255), (230, 220, 255, 255)]
+    for fi in range(4):
+        ox = fi * W
+        for y in range(H):
+            for x in range(W):
+                d = math.hypot(x - c, y - c)
+                if d <= 11.0:
+                    ring = int(d - fi) % 4
+                    if ring < len(cols) and (d < 11.0):
+                        alpha = max(0, min(255, int((11.0 - d) / 11.0 * 255) + 40))
+                        col = cols[ring]
+                        px[ox + x, y] = (col[0], col[1], col[2], alpha)
+    img.save(os.path.join(OUT, "portal.png"))
+
+
+# ---------------------------------------------------------------- chest 16x16 x2
+def gen_chest():
+    W = H = 16
+    img = new_sheet(2, W, H)
+    px = img.load()
+
+    def base(ox, lid_open):
+        # box body
+        for y in range(8, 14):
+            for x in range(3, 13):
+                px[ox + x, y] = WOOD if (x + y) % 2 else WOOD_D
+        # gold trim + lock
+        for x in range(3, 13):
+            px[ox + x, 10] = GOLD_D
+        px[ox + 7, 11] = GOLD
+        px[ox + 8, 11] = GOLD
+        # lid
+        if lid_open:
+            for x in range(3, 13):
+                px[ox + x, 3] = WOOD_D
+                px[ox + x, 4] = WOOD
+            # glow spilling out
+            for x in range(5, 11):
+                px[ox + x, 6] = (255, 240, 150, 255)
+                px[ox + x, 7] = (255, 220, 110, 255)
+        else:
+            for y in range(4, 8):
+                for x in range(3, 13):
+                    px[ox + x, y] = WOOD if (x + y) % 2 else WOOD_D
+            for x in range(3, 13):
+                px[ox + x, 4] = GOLD_D
+        outline(px, W, H, ox, 0)
+
+    base(0, False)
+    base(W, True)
+    img.save(os.path.join(OUT, "chest.png"))
+
+
+# ---------------------------------------------------------------- torch 8x16
+def gen_torch():
+    W, H = 8, 16
+    img = Image.new("RGBA", (W, H), T)
+    px = img.load()
+    # bracket / pole
+    for y in range(6, 14):
+        px[3, y] = WOOD_D
+        px[4, y] = WOOD
+    # holder cup
+    blit(px, 2, 5, ["gggg"], {"g": GUN_D})
+    # ember top (flame drawn by particles in-engine, this is the glowing coal)
+    blit(px, 2, 2, [".oo.", "oOOo", "oOOo", ".oo."],
+         {"o": (240, 140, 40, 255), "O": (255, 210, 90, 255)})
+    outline(px, W, H, 0, 0)
+    img.save(os.path.join(OUT, "torch.png"))
+
+
 def main():
     gen_player()
     gen_slime()
     gen_bat()
+    gen_mage()
     gen_bullet("bullet.png", YELLOW, YELLOW_D)
     gen_bullet("enemy_bullet.png", RED, RED_D)
     gen_muzzle()
@@ -323,6 +557,13 @@ def main():
     gen_heart()
     gen_crate()
     gen_tiles()
+    gen_shadow()
+    gen_spark()
+    gen_glow()
+    gen_boss()
+    gen_portal()
+    gen_chest()
+    gen_torch()
     print("Generated art in", OUT)
     for f in sorted(os.listdir(OUT)):
         if f.endswith(".png"):
