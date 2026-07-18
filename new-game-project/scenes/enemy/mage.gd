@@ -13,6 +13,7 @@ func _ready() -> void:
 	max_hp = 4
 	speed = 50.0
 	contact_damage = 1
+	coin_chance = 0.75
 	coin_min = 2
 	coin_max = 3
 	heart_chance = 0.16

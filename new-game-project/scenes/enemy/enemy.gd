@@ -13,6 +13,7 @@ const KNOCKBACK_DECAY := 320.0
 @export var speed := 42.0
 @export var contact_damage := 1
 @export var contact_range := 12.0
+@export var coin_chance := 0.6
 @export var coin_min := 1
 @export var coin_max := 2
 @export var heart_chance := 0.12
@@ -123,11 +124,13 @@ func _die() -> void:
 
 
 func _drop_loot() -> void:
-	var count := randi_range(coin_min, coin_max)
-	for i in count:
-		_spawn_pickup("coin", 1, Vector2(randf_range(-8, 8), randf_range(-8, 8)))
+	# Coins and hearts roll independently, so drops feel random and separate.
+	if randf() < coin_chance:
+		var count := randi_range(coin_min, coin_max)
+		for i in count:
+			_spawn_pickup("coin", 1, Vector2(randf_range(-8, 8), randf_range(-8, 8)))
 	if randf() < heart_chance:
-		_spawn_pickup("heart", 1, Vector2.ZERO)
+		_spawn_pickup("heart", 1, Vector2(randf_range(-6, 6), randf_range(-6, 6)))
 
 
 func _spawn_pickup(kind: String, value: int, offset: Vector2) -> void:

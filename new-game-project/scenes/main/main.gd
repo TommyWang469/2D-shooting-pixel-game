@@ -17,6 +17,8 @@ const THEMES := [
 var floor_tex: Texture2D
 var wall_tex: Texture2D
 var _tint := Color.WHITE
+var _obstacles: Array[Rect2] = []
+var _obstacle_body: StaticBody2D
 
 @onready var player: Node2D = $Player
 @onready var hud: CanvasLayer = $HUD
@@ -31,7 +33,9 @@ func _ready() -> void:
 	hud.bind_player(player)
 	_add_torches()
 	GameManager.chapter_changed.connect(_retint)
+	GameManager.room_changed.connect(func(_r): _regen_obstacles())
 	_retint(GameManager.chapter)
+	_regen_obstacles()
 	Audio.play_music()
 
 
@@ -50,6 +54,9 @@ func _draw() -> void:
 	draw_texture_rect(wall_tex, Rect2(0, h - WALL_T, w, WALL_T), true, wt)
 	draw_texture_rect(wall_tex, Rect2(0, 0, WALL_T, h), true, wt)
 	draw_texture_rect(wall_tex, Rect2(w - WALL_T, 0, WALL_T, h), true, wt)
+	var ot := _tint.darkened(0.12)
+	for r in _obstacles:
+		draw_texture_rect(wall_tex, r, true, ot)
 
 
 func _add_torches() -> void:
@@ -90,6 +97,55 @@ func _make_torch(pos: Vector2) -> void:
 	flame.color = Color(1.0, 0.6, 0.22)
 	flame.position = Vector2(0, -6)
 	root.add_child(flame)
+
+
+func _regen_obstacles() -> void:
+	if is_instance_valid(_obstacle_body):
+		_obstacle_body.queue_free()
+		_obstacle_body = null
+	_obstacles.clear()
+	# Boss rooms are open arenas.
+	if GameManager.is_boss_room():
+		queue_redraw()
+		return
+
+	var body := StaticBody2D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	add_child(body)
+	_obstacle_body = body
+
+	var inner := Rect2(44, 44, ROOM.x - 88, ROOM.y - 88)
+	var avoid := [Vector2(320, 192), Vector2(320, 262), Vector2(320, 68)]
+	var count := randi_range(3, 6)
+	var tries := 0
+	while _obstacles.size() < count and tries < 80:
+		tries += 1
+		var sw := randf_range(28, 52)
+		var sh := randf_range(24, 44)
+		var px := randf_range(inner.position.x, inner.end.x - sw)
+		var py := randf_range(inner.position.y, inner.end.y - sh)
+		var r := Rect2(px, py, sw, sh)
+		var c := r.get_center()
+		var ok := true
+		for a in avoid:
+			if c.distance_to(a) < 70.0:
+				ok = false
+				break
+		if ok:
+			for o in _obstacles:
+				if o.grow(12).intersects(r):
+					ok = false
+					break
+		if ok:
+			_obstacles.append(r)
+			var cs := CollisionShape2D.new()
+			var shape := RectangleShape2D.new()
+			shape.size = r.size
+			cs.shape = shape
+			cs.position = r.get_center()
+			body.add_child(cs)
+	queue_redraw()
 
 
 func _unhandled_input(event: InputEvent) -> void:

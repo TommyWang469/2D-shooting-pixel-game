@@ -3,6 +3,8 @@ extends Area2D
 ## A glow and bob draw the eye. If no weapon is preset, it rolls a reward based on the
 ## player's current weapon power.
 
+const WEAPON_PICKUP := preload("res://scenes/pickup/weapon_pickup.tscn")
+
 var _weapon: Weapon
 var _opened := false
 var _t := 0.0
@@ -42,7 +44,13 @@ func _on_body_entered(body: Node) -> void:
 		return
 	_opened = true
 	sprite.frame = 1
+	Audio.play("upgrade", 0.1, -3.0)
 	if _weapon == null:
 		_weapon = Weapon.random_reward(body.weapon_power(), body.weapon_id())
-	if body.has_method("switch_weapon"):
-		body.switch_weapon(_weapon)
+	# Drop the reward on the ground so the player can choose to take it.
+	var wp := WEAPON_PICKUP.instantiate()
+	var world := get_tree().current_scene
+	if world:
+		world.add_child(wp)
+		wp.global_position = global_position + Vector2(0, 20)
+		wp.set_weapon(_weapon)

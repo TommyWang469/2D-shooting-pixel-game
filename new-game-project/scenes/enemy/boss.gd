@@ -21,6 +21,7 @@ func _ready() -> void:
 	speed = 34.0
 	contact_damage = 2
 	contact_range = 20.0
+	coin_chance = 1.0
 	coin_min = 18
 	coin_max = 28
 	heart_chance = 1.0

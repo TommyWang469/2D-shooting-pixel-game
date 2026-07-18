@@ -9,6 +9,8 @@ const MAGE := preload("res://scenes/enemy/mage.tscn")
 const BOSS := preload("res://scenes/enemy/boss.tscn")
 const CHEST := preload("res://scenes/pickup/chest.tscn")
 const PORTAL := preload("res://scenes/pickup/portal.tscn")
+const SHOP := preload("res://scenes/pickup/shop_station.tscn")
+const PICKUP := preload("res://scenes/pickup/pickup.tscn")
 
 @export var room_rect := Rect2(24, 24, 592, 336)
 
@@ -69,6 +71,23 @@ func _spawn_combat() -> void:
 		elif r < 0.5:
 			scene = BAT
 		_spawn(scene)
+	_scatter_loot()
+
+
+func _scatter_loot() -> void:
+	# A little loot lives in the room itself, independent of enemies.
+	for i in randi_range(1, 3):
+		_drop_pickup("coin", _rand_pos())
+	if randf() < 0.35:
+		_drop_pickup("heart", _rand_pos())
+
+
+func _drop_pickup(kind: String, pos: Vector2) -> void:
+	var p := PICKUP.instantiate()
+	p.kind = kind
+	p.value = 1
+	get_tree().current_scene.add_child(p)
+	p.global_position = pos
 
 
 func _spawn_boss() -> void:
@@ -114,10 +133,23 @@ func _room_cleared(was_boss: bool) -> void:
 	await get_tree().create_timer(0.7).timeout
 	if GameManager.is_game_over or not is_inside_tree():
 		return
+	var center := room_rect.get_center()
 	if give_chest:
 		var c := CHEST.instantiate()
 		get_tree().current_scene.add_child(c)
-		c.global_position = room_rect.get_center()
+		c.global_position = center
+	if was_boss:
+		# Spend your hoard before descending: a life shrine and a weapon forge.
+		var life := SHOP.instantiate()
+		life.kind = "life"
+		life.cost = 20
+		get_tree().current_scene.add_child(life)
+		life.global_position = center + Vector2(-90, 40)
+		var forge := SHOP.instantiate()
+		forge.kind = "forge"
+		forge.cost = 25
+		get_tree().current_scene.add_child(forge)
+		forge.global_position = center + Vector2(90, 40)
 	var p := PORTAL.instantiate()
 	get_tree().current_scene.add_child(p)
 	p.global_position = Vector2(room_rect.get_center().x, room_rect.position.y + 44)

@@ -1,22 +1,21 @@
 extends CharacterBody2D
-## The player: WASD movement, mouse aim, dash (with i-frames + afterimage trail),
-## a switchable weapon, HP with knockback + i-frames, and full juice (shake, hit-stop,
-## sound, particles, floating numbers). Weapons are swapped by treasure chests.
+## The player. Applies the chosen character's stats/skill, then handles movement, aim,
+## dash (i-frames + trail), shooting, HP with knockback, and weapon swapping via
+## ground pickups. Full juice: shake, hit-stop, sound, particles, floating numbers.
 
 signal hp_changed(current: int, maximum: int)
 signal weapon_changed(display_name: String)
-signal dash_changed(ready_ratio: float)   ## 0 = just used, 1 = ready
+signal dash_changed(ready_ratio: float)
 
-const SPEED := 118.0
 const DASH_SPEED := 330.0
 const DASH_TIME := 0.16
-const DASH_COOLDOWN := 0.85
 const IFRAME_TIME := 0.8
 const MUZZLE_DIST := 9.0
 const KNOCK_DECAY := 620.0
 
 const BULLET := preload("res://scenes/bullet/bullet.tscn")
 const FLOAT := preload("res://scenes/fx/floating_text.tscn")
+const WEAPON_PICKUP := preload("res://scenes/pickup/weapon_pickup.tscn")
 
 const IDLE_FRAMES := [0, 1, 2, 3]
 const WALK_FRAMES := [4, 5, 6, 7]
@@ -25,6 +24,12 @@ var max_hp := 4
 var hp := 4
 var weapon: Weapon
 var aim_dir := Vector2.RIGHT
+
+# character-derived stats
+var _speed := 118.0
+var _dash_cooldown := 0.85
+var _fire_rate_mult := 1.0
+var _tint := Color.WHITE
 
 var _invincible := 0.0
 var _fire_cd := 0.0
@@ -47,11 +52,23 @@ func _ready() -> void:
 	if has_node("Shadow"):
 		$Shadow.texture = load("res://assets/shadow.png")
 	_muzzle_tex = load("res://assets/muzzle.png")
-	weapon = Weapon.starting()
+	_apply_character()
 	GameManager.bonus_life.connect(_on_bonus_life)
 	hp_changed.emit(hp, max_hp)
 	weapon_changed.emit(weapon.display_name)
 	dash_changed.emit(1.0)
+
+
+func _apply_character() -> void:
+	var ch := Character.get_data(GameManager.character_id)
+	max_hp = ch.max_hp
+	hp = max_hp
+	_speed = ch.speed
+	_dash_cooldown = ch.dash_cooldown
+	_fire_rate_mult = ch.fire_rate_mult
+	_tint = ch.tint
+	sprite.modulate = _tint
+	weapon = Weapon.by_id(ch.start_weapon)
 
 
 func _physics_process(delta: float) -> void:
@@ -74,7 +91,7 @@ func _physics_process(delta: float) -> void:
 		velocity = _dash_vec
 		_spawn_ghost(delta)
 	else:
-		velocity = input.normalized() * SPEED
+		velocity = input.normalized() * _speed
 		if _dash_cd <= 0.0 and Input.is_action_just_pressed("dash"):
 			_start_dash(input)
 
@@ -84,9 +101,12 @@ func _physics_process(delta: float) -> void:
 
 	_update_timers(delta)
 
+	if Input.is_action_just_pressed("interact"):
+		_try_interact()
+
 	if Input.is_action_pressed("shoot") and _fire_cd <= 0.0 and _dash_time <= 0.0:
 		_fire()
-		_fire_cd = 1.0 / weapon.fire_rate
+		_fire_cd = 1.0 / (weapon.fire_rate * _fire_rate_mult)
 
 	_animate(delta, input.length() > 0.1)
 
@@ -94,7 +114,7 @@ func _physics_process(delta: float) -> void:
 func _update_timers(delta: float) -> void:
 	if _dash_cd > 0.0:
 		_dash_cd -= delta
-		dash_changed.emit(clampf(1.0 - _dash_cd / DASH_COOLDOWN, 0.0, 1.0))
+		dash_changed.emit(clampf(1.0 - _dash_cd / _dash_cooldown, 0.0, 1.0))
 		if _dash_cd <= 0.0:
 			dash_changed.emit(1.0)
 	if _invincible > 0.0:
@@ -110,7 +130,7 @@ func _start_dash(input: Vector2) -> void:
 	var dir := input.normalized() if input.length() > 0.1 else aim_dir
 	_dash_vec = dir * DASH_SPEED
 	_dash_time = DASH_TIME
-	_dash_cd = DASH_COOLDOWN
+	_dash_cd = _dash_cooldown
 	_invincible = maxf(_invincible, DASH_TIME + 0.06)
 	Audio.play("dash", 0.1, -3.0)
 	Juice.shake(0.12)
@@ -133,7 +153,7 @@ func _spawn_ghost(delta: float) -> void:
 		return
 	world.add_child(g)
 	g.global_position = global_position
-	g.modulate = Color(0.6, 0.8, 1.0, 0.5)
+	g.modulate = Color(_tint.r * 0.7, _tint.g * 0.85, 1.0, 0.5)
 	var tw := g.create_tween()
 	tw.tween_property(g, "modulate:a", 0.0, 0.25)
 	tw.tween_callback(g.queue_free)
@@ -207,12 +227,16 @@ func heal(amount: int) -> void:
 	_spawn_float("+%d" % amount, Color(0.5, 1.0, 0.6), 14)
 
 
-func _on_bonus_life() -> void:
+func gain_max_hp() -> void:
 	max_hp += 1
 	hp = max_hp
 	hp_changed.emit(hp, max_hp)
 	Audio.play("heart", 0.05, 2.0)
-	_spawn_float("LIFE UP!", Color(1.0, 0.8, 0.3), 14)
+	_spawn_float("+1 LIFE", Color(1.0, 0.8, 0.3), 14)
+
+
+func _on_bonus_life() -> void:
+	gain_max_hp()
 
 
 func switch_weapon(new_weapon: Weapon) -> void:
@@ -229,6 +253,45 @@ func weapon_power() -> int:
 
 func weapon_id() -> String:
 	return weapon.id if weapon else "blaster"
+
+
+## Interact with the nearest thing in range (weapon on the ground, shop station).
+func _try_interact() -> void:
+	var best: Node = null
+	var best_d := 1.0e9
+	for it in get_tree().get_nodes_in_group("interactables"):
+		if not is_instance_valid(it) or not it.has_method("player_near"):
+			continue
+		if not it.player_near():
+			continue
+		var d := global_position.distance_to(it.global_position)
+		if d < best_d:
+			best_d = d
+			best = it
+	if best and best.has_method("interact"):
+		best.interact(self)
+
+
+## Equip the weapon from a ground pickup, dropping the current one where it lay.
+func take_weapon_from(pickup: Node) -> void:
+	var new_weapon: Weapon = pickup.weapon
+	var pos: Vector2 = pickup.global_position
+	pickup.queue_free()
+	var old_weapon := weapon
+	switch_weapon(new_weapon)
+	drop_weapon(old_weapon, pos)
+
+
+func drop_weapon(w: Weapon, pos: Vector2) -> void:
+	if w == null:
+		return
+	var wp := WEAPON_PICKUP.instantiate()
+	var world := get_tree().current_scene
+	if world == null:
+		return
+	world.add_child(wp)
+	wp.global_position = pos
+	wp.set_weapon(w)
 
 
 func _die() -> void:

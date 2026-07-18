@@ -527,6 +527,26 @@ def gen_chest():
     img.save(os.path.join(OUT, "chest.png"))
 
 
+# ---------------------------------------------------------------- weapon icon 12x8
+def gen_weapon_icon():
+    # White/gray gun silhouette; tinted per-weapon by bullet_color in engine.
+    W, H = 12, 8
+    img = Image.new("RGBA", (W, H), T)
+    px = img.load()
+    grid = [
+        ".gggggggg..",
+        "gWWWWWWWWg.",
+        "gWWWWWWWWgg",
+        "ggggggWWWg.",
+        "...gWWg....",
+        "...gWWg....",
+        "...gggg....",
+    ]
+    blit(px, 0, 0, grid, {"W": (245, 245, 245, 255), "g": (200, 200, 200, 255)})
+    outline(px, W, H, 0, 0)
+    img.save(os.path.join(OUT, "weapon_icon.png"))
+
+
 # ---------------------------------------------------------------- torch 8x16
 def gen_torch():
     W, H = 8, 16
@@ -563,6 +583,7 @@ def main():
     gen_boss()
     gen_portal()
     gen_chest()
+    gen_weapon_icon()
     gen_torch()
     print("Generated art in", OUT)
     for f in sorted(os.listdir(OUT)):

@@ -20,6 +20,7 @@ var score := 0
 var chapter := 1
 var room := 1
 var is_game_over := false
+var character_id := "gunner"   ## chosen on the select screen; persists across restarts
 
 
 func reset_game() -> void:
