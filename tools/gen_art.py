@@ -82,26 +82,18 @@ def outline(px, w, h, ox, oy, color=BLACK):
                     px[ox + nx, oy + ny] = color
 
 
-# ---------------------------------------------------------------- player 16x16 x8
-def gen_player():
+# ---------------------------------------------------------------- heroes 16x16 x8
+def gen_hero(fname, head_grid, C):
+    """8-frame hero sheet (4 idle + 4 walk). head_grid = 6 rows of 10 chars;
+    C maps grid keys to colors (needs b/B body, g/G gun, o boots)."""
     W = H = 16
     img = new_sheet(8, W, H)
     px = img.load()
-    C = {"h": HOOD, "H": HOOD_D, "s": SKIN, "b": BODY, "B": BODY_D,
-         "g": GUN, "G": GUN_D, "o": BOOT, "w": WHITE}
 
     def draw(fi, bob, leg):
         ox = fi * W
         oy = bob
-        head = [
-            "...hhhh...",
-            "..hhhhhh..",
-            ".hhHHHHhh.",
-            ".hssssssh.",
-            ".hswwswsh.",
-            "..ssssss..",
-        ]
-        blit(px, ox + 3, oy + 1, head, C)
+        blit(px, ox + 3, oy + 1, head_grid, C)
         body = [
             ".bbbbbb.",
             "bbBBBBbb",
@@ -130,7 +122,57 @@ def gen_player():
         draw(i, bob, 0)
     for i, leg in enumerate((1, 0, -1, 0)):
         draw(4 + i, 0, leg if i % 2 == 0 else 0)
-    img.save(os.path.join(OUT, "player.png"))
+    img.save(os.path.join(OUT, fname))
+
+
+def gen_heroes():
+    # Gunner: blue hood, teal jacket (the original hero)
+    gunner_head = [
+        "...hhhh...",
+        "..hhhhhh..",
+        ".hhHHHHhh.",
+        ".hssssssh.",
+        ".hswwswsh.",
+        "..ssssss..",
+    ]
+    gen_hero("player.png", gunner_head, {
+        "h": HOOD, "H": HOOD_D, "s": SKIN, "w": WHITE,
+        "b": BODY, "B": BODY_D, "g": GUN, "G": GUN_D, "o": BOOT,
+    })
+
+    # Knight: steel helmet with dark visor slit + red plume, steel armor
+    STEEL = (176, 186, 204, 255)
+    STEEL_D = (120, 130, 152, 255)
+    PLUME = (220, 70, 80, 255)
+    knight_head = [
+        "....pp....",
+        "..hhhhhh..",
+        ".hhhhhhhh.",
+        ".hHHHHHHh.",
+        ".hhwhhwhh.",
+        "..hhhhhh..",
+    ]
+    gen_hero("knight.png", knight_head, {
+        "h": STEEL, "H": STEEL_D, "p": PLUME, "w": (90, 100, 120, 255),
+        "b": STEEL, "B": STEEL_D, "g": GUN, "G": GUN_D, "o": BOOT,
+    })
+
+    # Rogue: deep-green hood, face in shadow with bright eyes, dark leathers
+    RGRN = (70, 150, 90, 255)
+    RGRN_D = (45, 105, 65, 255)
+    RDARK = (40, 46, 52, 255)
+    rogue_head = [
+        "...hhhh...",
+        "..hhhhhh..",
+        ".hhhhhhhh.",
+        ".hddddddh.",
+        ".hdwddwdh.",
+        "..hddddh..",
+    ]
+    gen_hero("rogue.png", rogue_head, {
+        "h": RGRN, "H": RGRN_D, "d": RDARK, "w": (220, 250, 200, 255),
+        "b": RGRN_D, "B": RDARK, "g": GUN, "G": GUN_D, "o": BOOT,
+    })
 
 
 # ---------------------------------------------------------------- slime 16x16 x4
@@ -566,7 +608,7 @@ def gen_torch():
 
 
 def main():
-    gen_player()
+    gen_heroes()
     gen_slime()
     gen_bat()
     gen_mage()

@@ -10,6 +10,8 @@ const EBULLET := preload("res://scenes/bullet/enemy_bullet.tscn")
 const SLIME := preload("res://scenes/enemy/slime.tscn")
 const BAT := preload("res://scenes/enemy/bat.tscn")
 
+var attack_weights: Array = [1.0, 1.0, 1.0]   ## ring, summon, charge — themed per biome
+
 var _attack_cd := 2.5
 var _state := "move"
 var _charge_dir := Vector2.ZERO
@@ -58,13 +60,14 @@ func _attack_timer(delta: float) -> void:
 
 
 func _do_attack() -> void:
-	match randi() % 3:
-		0:
-			_ring()
-		1:
-			_summon()
-		_:
-			_charge()
+	var total: float = attack_weights[0] + attack_weights[1] + attack_weights[2]
+	var r := randf() * total
+	if r < attack_weights[0]:
+		_ring()
+	elif r < attack_weights[0] + attack_weights[1]:
+		_summon()
+	else:
+		_charge()
 
 
 func _ring() -> void:

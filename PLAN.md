@@ -139,6 +139,41 @@ exercising Mage / Boss (damage→death→signals) / chest weapon-swap / portal �
   player/enemies/bullets), regenerated per room; boss rooms stay open arenas.
 - New input: **E / F** = interact. Player logic centralised via an `interactables` group.
 
+### 2026-07-18 — Loadout pass
+- **Forge never duplicates the room**: rolls exclude every weapon the player carries
+  *and* every weapon on the floor (chest drops, discards). `Weapon.random_excluding`.
+- **Multi-weapon carry**: player has weapon slots (start 1, cap 3). Free slot → pickup
+  adds; full → swap-and-drop. **Q / Tab** cycles. HUD shows `[current] · other · --`.
+- **Workshop** station in every boss room (after the boss): +1 weapon slot per buy
+  (40 coins, rising). Boss room shop row: Life Shrine · Forge · Workshop.
+- **Per-hero pixel art**: `player.png` (Gunner, blue hood), `knight.png` (steel helm +
+  red plume), `rogue.png` (shadowed green hood) — generated in `gen_art.py`; wired
+  into `Character.CATALOG.sprite`, char-select cards, and the in-game sprite.
+- Also fixed earlier: pickups snapping to room top (`_base_y` captured pre-position);
+  drops now scatter in a circle around the corpse.
+
+### 2026-07-18 — Map & biome overhaul (big)
+- **Procedural room shapes** (`main.gd` rewritten as a 40×24 tile-grid generator):
+  every room is carved as one of — ellipse hall, cellular-automata **cave blob**,
+  **cross**, 2–3-lobed chambers linked by corridors, or a **donut ring**. Rooms are
+  flood-fill connectivity-checked (largest region kept) with a fallback hall, then
+  rendered from the grid (floor + edge-wall tiles, theme-tinted) with **merged
+  rectangle colliders** per wall row. Boss rooms are always an open arena.
+- **Biome themes** (`scenes/dungeon/theme.gd`, chapters cycle):
+  1. **Stone Halls** — slate colors, square pillars, balanced enemies, summon-heavy boss.
+  2. **Ember Depths** — warm lava palette, cave blobs + rock clusters, faster hotter
+     enemies (+18% spd, red tint), **charge-mad** boss.
+  3. **Frost Crypt** — icy palette, ice-shard walls, slow tanky enemies (+35% HP,
+     blue tint), **bullet-ring** boss.
+  Themes drive room-shape pools, obstacle styles, floor/wall/ambient colors,
+  enemy tint+stat multipliers (`Enemy.apply_theme`) and boss attack weights.
+- **Floor-aware placement everywhere**: enemies, chest, shops, portal, scattered
+  loot, torches and the player spawn all resolve to real open floor tiles
+  (`random_floor_pos` / `nearest_floor_pos`) — nothing lands inside a wall.
+- Room banner now names the biome ("Ember Depths · Room 2").
+- Verified: 12 consecutive generated rooms across all 3 themes all valid
+  (202–511 floor tiles, varied silhouettes), 500-frame gameplay run clean.
+
 ### Ideas for further passes
 - Unique boss sprites per chapter; more enemy types; status effects (freeze/burn).
 - A minimap; controller support; settings menu (volume sliders).

@@ -14,6 +14,7 @@ const CATALOG := {
 		"fire_rate_mult": 1.25,
 		"start_weapon": "blaster",
 		"tint": Color(1.0, 1.0, 1.0),
+		"sprite": "res://assets/player.png",
 	},
 	"knight": {
 		"display_name": "Knight",
@@ -23,7 +24,8 @@ const CATALOG := {
 		"dash_cooldown": 1.15,
 		"fire_rate_mult": 1.0,
 		"start_weapon": "shotgun",
-		"tint": Color(0.7, 0.85, 1.0),
+		"tint": Color(1.0, 1.0, 1.0),
+		"sprite": "res://assets/knight.png",
 	},
 	"rogue": {
 		"display_name": "Rogue",
@@ -33,7 +35,8 @@ const CATALOG := {
 		"dash_cooldown": 0.5,
 		"fire_rate_mult": 1.1,
 		"start_weapon": "smg",
-		"tint": Color(0.75, 1.0, 0.8),
+		"tint": Color(1.0, 1.0, 1.0),
+		"sprite": "res://assets/rogue.png",
 	},
 }
 

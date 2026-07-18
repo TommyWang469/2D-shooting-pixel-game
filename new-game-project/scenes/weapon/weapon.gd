@@ -88,6 +88,18 @@ static func random_reward(current_power: int, avoid_id: String) -> Weapon:
 	return by_id(choices[randi() % choices.size()])
 
 
+## Uniformly random weapon whose id is not in `exclude` (player's current weapon,
+## weapons already on the floor, ...). Falls back to the full pool if all excluded.
+static func random_excluding(exclude: Array) -> Weapon:
+	var choices: Array[String] = []
+	for cid in CHEST_POOL:
+		if not exclude.has(cid):
+			choices.append(cid)
+	if choices.is_empty():
+		choices = CHEST_POOL.duplicate()
+	return by_id(choices[randi() % choices.size()])
+
+
 ## Angle offsets (radians) for each bullet in a single shot.
 func shot_angles() -> Array[float]:
 	var out: Array[float] = []

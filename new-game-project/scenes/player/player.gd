@@ -4,7 +4,7 @@ extends CharacterBody2D
 ## ground pickups. Full juice: shake, hit-stop, sound, particles, floating numbers.
 
 signal hp_changed(current: int, maximum: int)
-signal weapon_changed(display_name: String)
+signal weapons_changed(names: Array, index: int, slots: int)
 signal dash_changed(ready_ratio: float)
 
 const DASH_SPEED := 330.0
@@ -23,7 +23,10 @@ const WALK_FRAMES := [4, 5, 6, 7]
 
 var max_hp := 4
 var hp := 4
-var weapon: Weapon
+var weapon: Weapon                      ## currently equipped (weapons[weapon_index])
+var weapons: Array[Weapon] = []         ## carried weapons
+var weapon_index := 0
+var max_weapon_slots := 1               ## buy more at the boss-room Workshop
 var aim_dir := Vector2.RIGHT
 
 # character-derived stats
@@ -56,12 +59,13 @@ func _ready() -> void:
 	_apply_character()
 	GameManager.bonus_life.connect(_on_bonus_life)
 	hp_changed.emit(hp, max_hp)
-	weapon_changed.emit(weapon.display_name)
+	_emit_weapons()
 	dash_changed.emit(1.0)
 
 
 func _apply_character() -> void:
 	var ch := Character.get_data(GameManager.character_id)
+	sprite.texture = load(ch.get("sprite", "res://assets/player.png"))
 	max_hp = ch["max_hp"]
 	hp = max_hp
 	_speed = ch["speed"]
@@ -69,7 +73,9 @@ func _apply_character() -> void:
 	_fire_rate_mult = ch["fire_rate_mult"]
 	_tint = ch["tint"]
 	sprite.modulate = _tint
-	weapon = Weapon.by_id(ch["start_weapon"])
+	weapons = [Weapon.by_id(ch["start_weapon"])]
+	weapon_index = 0
+	weapon = weapons[0]
 
 
 func _physics_process(delta: float) -> void:
@@ -104,6 +110,9 @@ func _physics_process(delta: float) -> void:
 
 	if Input.is_action_just_pressed("interact"):
 		_try_interact()
+
+	if Input.is_action_just_pressed("swap_weapon"):
+		_cycle_weapon()
 
 	if Input.is_action_pressed("shoot") and _fire_cd <= 0.0 and _dash_time <= 0.0:
 		_fire()
@@ -242,12 +251,49 @@ func _on_bonus_life() -> void:
 
 
 func switch_weapon(new_weapon: Weapon) -> void:
+	weapons[weapon_index] = new_weapon
 	weapon = new_weapon
-	weapon_changed.emit(weapon.display_name)
+	_emit_weapons()
 	Audio.play("upgrade")
 	Juice.shake(0.2)
 	_spawn_float(weapon.display_name + "!", Color(1.0, 0.9, 0.4), 14)
 	_pickup_pop(weapon.bullet_color)
+
+
+## Q / Tab: cycle through carried weapons.
+func _cycle_weapon() -> void:
+	if weapons.size() < 2:
+		return
+	weapon_index = (weapon_index + 1) % weapons.size()
+	weapon = weapons[weapon_index]
+	_emit_weapons()
+	Audio.play("click", 0.08, -4.0)
+	_spawn_float(weapon.display_name, weapon.bullet_color, 12)
+
+
+## Workshop purchase: carry one more weapon (max 3 slots).
+func add_weapon_slot() -> bool:
+	if max_weapon_slots >= 3:
+		return false
+	max_weapon_slots += 1
+	_emit_weapons()
+	_spawn_float("+1 WEAPON SLOT", Color(0.6, 0.9, 1.0), 14)
+	_pickup_pop(Color(0.6, 0.9, 1.0))
+	return true
+
+
+func weapon_ids() -> Array:
+	var out := []
+	for w in weapons:
+		out.append(w.id)
+	return out
+
+
+func _emit_weapons() -> void:
+	var names := []
+	for w in weapons:
+		names.append(w.display_name)
+	weapons_changed.emit(names, weapon_index, max_weapon_slots)
 
 
 ## Little flourish when equipping / buying: a burst + a scale-pop on the sprite.
@@ -288,14 +334,24 @@ func _try_interact() -> void:
 		best.interact(self)
 
 
-## Equip the weapon from a ground pickup, dropping the current one where it lay.
+## Take a weapon from the ground. With a free slot it's simply added; with full
+## slots it swaps with the current weapon, dropping it where the new one lay.
 func take_weapon_from(pickup: Node) -> void:
 	var new_weapon: Weapon = pickup.weapon
 	var pos: Vector2 = pickup.global_position
 	pickup.queue_free()
-	var old_weapon := weapon
-	switch_weapon(new_weapon)
-	drop_weapon(old_weapon, pos)
+	if weapons.size() < max_weapon_slots:
+		weapons.append(new_weapon)
+		weapon_index = weapons.size() - 1
+		weapon = new_weapon
+		_emit_weapons()
+		Audio.play("upgrade")
+		_spawn_float(new_weapon.display_name + "!", Color(1.0, 0.9, 0.4), 14)
+		_pickup_pop(new_weapon.bullet_color)
+	else:
+		var old_weapon := weapon
+		switch_weapon(new_weapon)
+		drop_weapon(old_weapon, pos)
 
 
 func drop_weapon(w: Weapon, pos: Vector2) -> void:

@@ -22,6 +22,7 @@ const KNOCKBACK_DECAY := 320.0
 @export var body_color := Color(0.5, 0.85, 0.4)
 
 var hp := 3
+var base_tint := Color.WHITE      ## theme tint, set via apply_theme()
 var player: Node2D
 var _knockback := Vector2.ZERO
 var _hit_flash := 0.0
@@ -85,9 +86,19 @@ func _tick(delta: float) -> void:
 		_hit_flash -= delta
 		sprite.modulate = Color(2.2, 2.2, 2.2)
 	else:
-		sprite.modulate = Color.WHITE
+		sprite.modulate = base_tint
 
 	_animate(delta)
+
+
+## Called by the Dungeon right after spawning: biome tint + stat multipliers.
+func apply_theme(tint: Color, hp_mult: float, speed_mult: float) -> void:
+	base_tint = tint
+	sprite.modulate = tint
+	max_hp = maxi(1, int(round(max_hp * hp_mult)))
+	hp = max_hp
+	speed *= speed_mult
+	body_color = body_color.lerp(tint, 0.5)
 
 
 func apply_knockback(impulse: Vector2) -> void:
@@ -118,7 +129,7 @@ func _die() -> void:
 	Juice.shake(0.22)
 	Juice.hitstop(0.06, 0.05)
 	velocity = Vector2.ZERO
-	sprite.modulate = Color.WHITE
+	sprite.modulate = base_tint
 	sprite.frame = death_frame
 	get_tree().create_timer(0.25).timeout.connect(queue_free)
 

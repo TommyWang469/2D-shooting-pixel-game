@@ -1,7 +1,8 @@
 extends Node
-## Runs the dungeon: spawns each room's enemies (or the chapter boss in the final
-## room), detects clears, then drops a treasure chest and/or an exit portal. Stepping
-## into the portal advances the room/chapter and starts the next, harder fight.
+## Runs the dungeon: spawns each room's enemies (or the chapter boss), detects
+## clears, then drops rewards and the exit portal. All placement is floor-aware —
+## it asks the Main room generator for valid tiles — and every spawn is themed to
+## the current biome (tint, stats, boss attack pattern).
 
 const SLIME := preload("res://scenes/enemy/slime.tscn")
 const BAT := preload("res://scenes/enemy/bat.tscn")
@@ -12,8 +13,6 @@ const PORTAL := preload("res://scenes/pickup/portal.tscn")
 const SHOP := preload("res://scenes/pickup/shop_station.tscn")
 const PICKUP := preload("res://scenes/pickup/pickup.tscn")
 
-@export var room_rect := Rect2(24, 24, 592, 336)
-
 var _state := "idle"          # idle / combat / boss / transition
 var _hud: Node
 var _player: Node2D
@@ -23,6 +22,14 @@ func _ready() -> void:
 	_player = get_tree().get_first_node_in_group("player")
 	_hud = get_tree().get_first_node_in_group("hud")
 	_start_after(1.2)
+
+
+func _main() -> Node:
+	return get_parent()
+
+
+func _theme() -> Dictionary:
+	return DungeonTheme.for_chapter(GameManager.chapter)
 
 
 func _process(_delta: float) -> void:
@@ -43,13 +50,15 @@ func _start_after(delay: float) -> void:
 func _begin_room() -> void:
 	if _hud and _hud.has_method("hide_boss"):
 		_hud.hide_boss()
+	var biome: String = _theme().name
 	if GameManager.is_boss_room():
-		_banner("CHAPTER %d" % GameManager.chapter, "!  BOSS  !", Color(1.0, 0.5, 0.5))
+		_banner("CHAPTER %d" % GameManager.chapter, "%s  ·  BOSS" % biome, Color(1.0, 0.5, 0.5))
 		Audio.play("wave", 0.05, 2.0)
 		_spawn_boss()
 		_state = "boss"
 	else:
-		_banner("CHAPTER %d" % GameManager.chapter, "Room %d" % GameManager.room, Color(0.8, 0.9, 1.0))
+		_banner("CHAPTER %d" % GameManager.chapter,
+				"%s  ·  Room %d" % [biome, GameManager.room], Color(0.8, 0.9, 1.0))
 		Audio.play("wave", 0.08, -3.0)
 		_spawn_combat()
 		_state = "combat"
@@ -75,7 +84,6 @@ func _spawn_combat() -> void:
 
 
 func _scatter_loot() -> void:
-	# A little loot lives in the room itself, independent of enemies.
 	for i in randi_range(1, 3):
 		_drop_pickup("coin", _rand_pos())
 	if randf() < 0.35:
@@ -91,31 +99,29 @@ func _drop_pickup(kind: String, pos: Vector2) -> void:
 
 
 func _spawn_boss() -> void:
+	var t := _theme()
 	var b := BOSS.instantiate()
 	var world := get_tree().current_scene
 	world.add_child(b)
-	b.global_position = Vector2(room_rect.get_center().x, room_rect.position.y + 64)
+	b.global_position = _main().top_pos() + Vector2(0, 24)
+	b.apply_theme(t.boss_tint, t.hp_mult, t.speed_mult)
+	b.attack_weights = t.boss_weights
 	if _hud and _hud.has_method("show_boss"):
 		b.health_changed.connect(_hud.show_boss)
 	b.died.connect(_on_boss_died)
 
 
 func _spawn(scene: PackedScene) -> void:
+	var t := _theme()
 	var e := scene.instantiate()
 	get_tree().current_scene.add_child(e)
 	e.global_position = _rand_pos()
+	e.apply_theme(t.enemy_tint, t.hp_mult, t.speed_mult)
 
 
 func _rand_pos() -> Vector2:
-	for _i in 24:
-		var p := Vector2(
-			randf_range(room_rect.position.x, room_rect.end.x),
-			randf_range(room_rect.position.y, room_rect.end.y)
-		)
-		if _player == null or not is_instance_valid(_player) \
-				or p.distance_to(_player.global_position) > 95.0:
-			return p
-	return room_rect.get_center()
+	var avoid: Vector2 = _player.global_position if (_player and is_instance_valid(_player)) else Vector2.INF
+	return _main().random_floor_pos(avoid, 95.0)
 
 
 func _on_boss_died() -> void:
@@ -133,34 +139,40 @@ func _room_cleared(was_boss: bool) -> void:
 	await get_tree().create_timer(0.7).timeout
 	if GameManager.is_game_over or not is_inside_tree():
 		return
-	var center := room_rect.get_center()
+	var m := _main()
+	var center: Vector2 = m.center_pos()
 	if give_chest:
 		var c := CHEST.instantiate()
 		get_tree().current_scene.add_child(c)
 		c.global_position = center
 	if was_boss:
-		# Spend your hoard before descending: a life shrine and a weapon forge.
+		# Spend your hoard before descending: shrine, forge and workshop.
 		var life := SHOP.instantiate()
 		life.kind = "life"
 		life.cost = 20
 		get_tree().current_scene.add_child(life)
-		life.global_position = center + Vector2(-90, 40)
+		life.global_position = m.nearest_floor_pos(center + Vector2(-90, 40))
 		var forge := SHOP.instantiate()
 		forge.kind = "forge"
 		forge.cost = 25
 		get_tree().current_scene.add_child(forge)
-		forge.global_position = center + Vector2(90, 40)
+		forge.global_position = m.nearest_floor_pos(center + Vector2(90, 40))
+		var workshop := SHOP.instantiate()
+		workshop.kind = "workshop"
+		workshop.cost = 40
+		get_tree().current_scene.add_child(workshop)
+		workshop.global_position = m.nearest_floor_pos(center + Vector2(0, 90))
 	var p := PORTAL.instantiate()
 	get_tree().current_scene.add_child(p)
-	p.global_position = Vector2(room_rect.get_center().x, room_rect.position.y + 44)
+	p.global_position = m.top_pos()
 	p.entered.connect(_on_portal)
 
 
 func _on_portal() -> void:
 	_clear_field()
-	GameManager.advance()
+	GameManager.advance()      # Main regenerates the room via room_changed
 	if _player and is_instance_valid(_player):
-		_player.global_position = room_rect.get_center() + Vector2(0, 70)
+		_player.global_position = _main().spawn_pos()
 	_start_after(0.7)
 
 

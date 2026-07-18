@@ -62,11 +62,11 @@ func _atlas(path: String, region: Rect2) -> AtlasTexture:
 
 func bind_player(player: Node) -> void:
 	player.hp_changed.connect(_on_hp)
-	player.weapon_changed.connect(_on_weapon)
+	player.weapons_changed.connect(_on_weapons)
 	player.dash_changed.connect(_on_dash)
 	_on_hp(player.hp, player.max_hp)
 	if player.weapon:
-		_on_weapon(player.weapon.display_name)
+		player._emit_weapons()
 
 
 func _on_hp(current: int, maximum: int) -> void:
@@ -100,8 +100,14 @@ func _on_room(room: int) -> void:
 	room_label.text = "Boss" if room >= GameManager.ROOMS_PER_CHAPTER else "Room %d" % room
 
 
-func _on_weapon(display_name: String) -> void:
-	weapon_label.text = display_name
+func _on_weapons(names: Array, index: int, slots: int) -> void:
+	# Current weapon bracketed; empty slots shown as "--". Q/Tab cycles.
+	var parts := []
+	for i in names.size():
+		parts.append(("[%s]" % names[i]) if i == index else str(names[i]))
+	for i in range(names.size(), slots):
+		parts.append("--")
+	weapon_label.text = "  ·  ".join(parts)
 
 
 func _on_dash(ratio: float) -> void:

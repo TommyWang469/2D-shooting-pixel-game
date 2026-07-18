@@ -31,10 +31,9 @@ func _make_card(data: Dictionary) -> Control:
 
 	var hero := TextureRect.new()
 	var atlas := AtlasTexture.new()
-	atlas.atlas = load("res://assets/player.png")
+	atlas.atlas = load(data.get("sprite", "res://assets/player.png"))
 	atlas.region = Rect2(0, 0, 16, 16)
 	hero.texture = atlas
-	hero.modulate = data["tint"]
 	hero.custom_minimum_size = Vector2(64, 64)
 	hero.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	vb.add_child(hero)
