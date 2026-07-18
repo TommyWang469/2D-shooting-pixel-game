@@ -272,6 +272,17 @@ Everything in the plan above shipped:
   path). Both temporarily autoloaded during test runs only; **all pass, 0 errors**.
   Title/char-select boot clean headless.
 
+### 2026-07-18 — "2 enemies left but the room looks empty" fix
+Player report (screenshot, Ember Ch2 Room 3): counter says 2 enemies, none visible.
+Cause: live but hidden stragglers — the stationary Spitter (and slow enemies) can sit
+in a far cave arm off-camera; the guide arrow points at them but through winding
+walls that isn't enough. Fix, Enter-the-Gungeon style: **anti-stall failsafe** in
+`dungeon.gd` — when ≤3 enemies remain and nothing has been killed for 10s, the
+stragglers are teleported onto open floor 60–90px from the player (purple puffs at
+both ends + a soft cue). Timer resets on every kill and each new room.
+Verified by `tests/stall.gd`: plants a spitter 273px away, never attacks —
+relocated at 10.2s; full 22-check smoke suite still green.
+
 ### Ideas for further passes
 - Unique boss sprites per chapter; more enemy types; status effects (freeze/burn).
 - A minimap; destructible obstacles / cover that breaks under fire.

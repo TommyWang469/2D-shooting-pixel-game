@@ -18,15 +18,24 @@ const CHEST := preload("res://scenes/pickup/chest.tscn")
 const PORTAL := preload("res://scenes/pickup/portal.tscn")
 const SHOP := preload("res://scenes/pickup/shop_station.tscn")
 const PICKUP := preload("res://scenes/pickup/pickup.tscn")
+const BURST := preload("res://scenes/fx/burst.tscn")
+
+## Anti-stall failsafe: if only a few enemies remain and nothing has died for this
+## long, they're hiding somewhere the player can't find (an off-screen spitter in a
+## cave arm) — teleport them next to the player so the fight comes to you.
+const STALL_SECONDS := 10.0
+const STALL_MAX_ENEMIES := 3
 
 var _state := "idle"          # idle / combat / boss / transition
 var _hud: Node
 var _player: Node2D
+var _stall := 0.0
 
 
 func _ready() -> void:
 	_player = get_tree().get_first_node_in_group("player")
 	_hud = get_tree().get_first_node_in_group("hud")
+	GameManager.kills_changed.connect(func(_k): _stall = 0.0)
 	_start_after(1.2)
 
 
@@ -38,11 +47,42 @@ func _theme() -> Dictionary:
 	return DungeonTheme.for_chapter(GameManager.chapter)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if GameManager.is_game_over:
 		return
-	if _state == "combat" and get_tree().get_nodes_in_group("enemies").is_empty():
-		_room_cleared(false)
+	if _state == "combat":
+		var enemies := get_tree().get_nodes_in_group("enemies")
+		if enemies.is_empty():
+			_room_cleared(false)
+		else:
+			_tick_stall(delta, enemies)
+
+
+func _tick_stall(delta: float, enemies: Array) -> void:
+	if enemies.size() > STALL_MAX_ENEMIES:
+		_stall = 0.0
+		return
+	_stall += delta
+	if _stall < STALL_SECONDS:
+		return
+	_stall = 0.0
+	if _player == null or not is_instance_valid(_player):
+		return
+	for e in enemies:
+		if not is_instance_valid(e) or e._dying:
+			continue
+		_puff(e.global_position)
+		var offset := Vector2.RIGHT.rotated(randf() * TAU) * randf_range(60.0, 90.0)
+		e.global_position = _main().nearest_floor_pos(_player.global_position + offset)
+		_puff(e.global_position)
+	Audio.play("wave", 0.1, -8.0)
+
+
+func _puff(pos: Vector2) -> void:
+	var b := BURST.instantiate()
+	get_tree().current_scene.add_child(b)
+	b.global_position = pos
+	b.burst(Color(0.8, 0.6, 1.0), 10, 80.0)
 
 
 func _start_after(delay: float) -> void:
@@ -54,6 +94,7 @@ func _start_after(delay: float) -> void:
 
 
 func _begin_room() -> void:
+	_stall = 0.0
 	if _hud and _hud.has_method("hide_boss"):
 		_hud.hide_boss()
 	var biome: String = _theme().name
