@@ -11,6 +11,7 @@ const MAGNET_SPEED := 180.0
 
 var _bob := 0.0
 var _base_y := 0.0
+var _base_set := false
 var _spin := 0.0
 var _frame := 0
 var _player: Node2D
@@ -21,7 +22,6 @@ var _player: Node2D
 func _ready() -> void:
 	add_to_group("transient")
 	body_entered.connect(_on_body_entered)
-	_base_y = position.y
 	_player = get_tree().get_first_node_in_group("player")
 	match kind:
 		"coin":
@@ -32,6 +32,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if not _base_set:
+		_base_y = position.y   # capture after spawn code has set our position
+		_base_set = true
 	_bob += delta * 4.0
 	if kind == "coin":
 		_spin += delta

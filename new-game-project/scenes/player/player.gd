@@ -15,6 +15,7 @@ const KNOCK_DECAY := 620.0
 
 const BULLET := preload("res://scenes/bullet/bullet.tscn")
 const FLOAT := preload("res://scenes/fx/floating_text.tscn")
+const BURST := preload("res://scenes/fx/burst.tscn")
 const WEAPON_PICKUP := preload("res://scenes/pickup/weapon_pickup.tscn")
 
 const IDLE_FRAMES := [0, 1, 2, 3]
@@ -233,6 +234,7 @@ func gain_max_hp() -> void:
 	hp_changed.emit(hp, max_hp)
 	Audio.play("heart", 0.05, 2.0)
 	_spawn_float("+1 LIFE", Color(1.0, 0.8, 0.3), 14)
+	_pickup_pop(Color(1.0, 0.5, 0.6))
 
 
 func _on_bonus_life() -> void:
@@ -245,6 +247,20 @@ func switch_weapon(new_weapon: Weapon) -> void:
 	Audio.play("upgrade")
 	Juice.shake(0.2)
 	_spawn_float(weapon.display_name + "!", Color(1.0, 0.9, 0.4), 14)
+	_pickup_pop(weapon.bullet_color)
+
+
+## Little flourish when equipping / buying: a burst + a scale-pop on the sprite.
+func _pickup_pop(color: Color) -> void:
+	var b := BURST.instantiate()
+	var world := get_tree().current_scene
+	if world:
+		world.add_child(b)
+		b.global_position = global_position
+		b.burst(color, 14, 90.0)
+	var tw := sprite.create_tween()
+	tw.tween_property(sprite, "scale", Vector2(1.4, 1.4), 0.08).from(Vector2.ONE)
+	tw.tween_property(sprite, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func weapon_power() -> int:

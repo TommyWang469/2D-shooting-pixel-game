@@ -5,6 +5,7 @@ extends Area2D
 
 const WEAPON_PICKUP := preload("res://scenes/pickup/weapon_pickup.tscn")
 const FLOAT := preload("res://scenes/fx/floating_text.tscn")
+const BURST := preload("res://scenes/fx/burst.tscn")
 
 @export var kind := "life"          # "life" or "forge"
 @export var cost := 20
@@ -71,6 +72,7 @@ func interact(player: Node) -> void:
 		return
 	GameManager.spend_coins(cost)
 	Audio.play("upgrade")
+	_buy_pop()
 	if kind == "life":
 		if player.has_method("gain_max_hp"):
 			player.gain_max_hp()
@@ -83,6 +85,17 @@ func interact(player: Node) -> void:
 		wp.set_weapon(w)
 		cost += 15
 	_refresh()
+
+
+func _buy_pop() -> void:
+	var b := BURST.instantiate()
+	get_tree().current_scene.add_child(b)
+	b.global_position = global_position
+	b.burst(Color(1.0, 0.5, 0.6) if kind == "life" else Color(1.0, 0.8, 0.4), 16, 100.0)
+	var base := icon.scale
+	var tw := icon.create_tween()
+	tw.tween_property(icon, "scale", base * 1.4, 0.08)
+	tw.tween_property(icon, "scale", base, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _deny() -> void:

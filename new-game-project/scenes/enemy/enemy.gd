@@ -124,13 +124,19 @@ func _die() -> void:
 
 
 func _drop_loot() -> void:
-	# Coins and hearts roll independently, so drops feel random and separate.
+	# Coins and hearts roll independently and scatter randomly around the corpse.
 	if randf() < coin_chance:
 		var count := randi_range(coin_min, coin_max)
 		for i in count:
-			_spawn_pickup("coin", 1, Vector2(randf_range(-8, 8), randf_range(-8, 8)))
+			_spawn_pickup("coin", 1, _rand_offset(18.0))
 	if randf() < heart_chance:
-		_spawn_pickup("heart", 1, Vector2(randf_range(-6, 6), randf_range(-6, 6)))
+		_spawn_pickup("heart", 1, _rand_offset(14.0))
+
+
+func _rand_offset(radius: float) -> Vector2:
+	var ang := randf() * TAU
+	var dist := sqrt(randf()) * radius
+	return Vector2(cos(ang), sin(ang)) * dist
 
 
 func _spawn_pickup(kind: String, value: int, offset: Vector2) -> void:
