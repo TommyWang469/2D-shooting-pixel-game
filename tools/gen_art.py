@@ -457,6 +457,166 @@ def gen_glow():
     img.save(os.path.join(OUT, "glow.png"))
 
 
+# ---------------------------------------------------------------- imp 16x16 x4
+def gen_imp():
+    W = H = 16
+    img = new_sheet(4, W, H)
+    px = img.load()
+    ORG = (235, 120, 60, 255)
+    ORG_D = (180, 80, 40, 255)
+    HORN = (120, 40, 30, 255)
+
+    def draw(fi, crouch, legs_apart):
+        ox = fi * W
+        oy = 2 if crouch else 0
+        # horns
+        px[ox + 5, 3 + oy] = HORN
+        px[ox + 10, 3 + oy] = HORN
+        px[ox + 5, 2 + oy] = HORN
+        px[ox + 10, 2 + oy] = HORN
+        # head+body blob
+        for y in range(4 + oy, 11):
+            for x in range(5, 11):
+                px[ox + x, y] = ORG if y < 9 else ORG_D
+        # eyes (bright when winding up)
+        ec = WHITE if not crouch else YELLOW
+        px[ox + 6, 6 + oy] = ec
+        px[ox + 9, 6 + oy] = ec
+        # tail
+        px[ox + 11, 9] = ORG_D
+        px[ox + 12, 8] = ORG_D
+        # legs
+        if legs_apart:
+            blit(px, ox + 5, 11, ["o...o", "o...o"], {"o": ORG_D})
+        else:
+            blit(px, ox + 6, 11, ["o.o", "o.o"], {"o": ORG_D})
+        outline(px, W, H, ox, 0)
+
+    draw(0, False, True)
+    draw(1, False, False)
+    draw(2, True, False)          # windup crouch
+    ox = 3 * W                     # death splat
+    for x, y in [(5, 12), (7, 11), (9, 13), (10, 11), (6, 13), (11, 12)]:
+        px[ox + x, y] = ORG_D
+    outline(px, W, H, ox, 0)
+    img.save(os.path.join(OUT, "imp.png"))
+
+
+# ---------------------------------------------------------------- spitter 16x16 x3
+def gen_spitter():
+    W = H = 16
+    img = new_sheet(3, W, H)
+    px = img.load()
+    RK = (140, 110, 95, 255)
+    RK_D = (95, 72, 62, 255)
+    LAVA = (255, 140, 50, 255)
+    LAVA_B = (255, 210, 90, 255)
+
+    def mound(ox, mouth_open):
+        for y in range(6, 14):
+            half = min(6, (y - 4))
+            for x in range(8 - half, 8 + half):
+                px[ox + x, y] = RK if (x + y) % 2 else RK_D
+        # lava cracks
+        for (cx, cy) in [(5, 11), (10, 9), (7, 12)]:
+            px[ox + cx, cy] = LAVA
+        # mouth
+        if mouth_open:
+            for y in range(8, 11):
+                for x in range(6, 10):
+                    px[ox + x, y] = LAVA
+            px[ox + 7, 9] = LAVA_B
+            px[ox + 8, 9] = LAVA_B
+        else:
+            for x in range(6, 10):
+                px[ox + x, 9] = RK_D
+        outline(px, W, H, ox, 0)
+
+    mound(0, False)
+    mound(W, True)
+    ox = 2 * W                     # death rubble
+    for x, y in [(4, 12), (6, 13), (8, 11), (10, 13), (11, 12), (7, 12)]:
+        px[ox + x, y] = RK_D
+    outline(px, W, H, ox, 0)
+    img.save(os.path.join(OUT, "spitter.png"))
+
+
+# ---------------------------------------------------------------- ghost 16x16 x3
+def gen_ghost():
+    W = H = 16
+    img = new_sheet(3, W, H)
+    px = img.load()
+    GH = (205, 225, 255, 255)
+    GH_D = (150, 180, 230, 255)
+
+    def sheet(ox, wave):
+        # rounded head
+        for y in range(3, 8):
+            for x in range(5, 11):
+                px[ox + x, y] = GH
+        px[ox + 4, 5] = GH
+        px[ox + 11, 5] = GH
+        # body tapering with wavy hem
+        for y in range(8, 12):
+            for x in range(5, 11):
+                px[ox + x, y] = GH if y < 10 else GH_D
+        hem = [(5, 12), (7, 13), (9, 12)] if wave == 0 else [(6, 13), (8, 12), (10, 13)]
+        for (hx, hy) in hem:
+            px[ox + hx, hy] = GH_D
+        # eyes + mouth
+        px[ox + 6, 5] = (40, 50, 80, 255)
+        px[ox + 9, 5] = (40, 50, 80, 255)
+        px[ox + 7, 7] = GH_D
+        px[ox + 8, 7] = GH_D
+        outline(px, W, H, ox, 0, (110, 140, 190, 255))
+
+    sheet(0, 0)
+    sheet(W, 1)
+    ox = 2 * W                     # dissipating wisps
+    for x, y in [(6, 6), (9, 5), (7, 9), (10, 8), (5, 10), (8, 11)]:
+        px[ox + x, y] = GH_D
+    img.save(os.path.join(OUT, "ghost.png"))
+
+
+# ---------------------------------------------------------------- ice slime 16x16 x4
+def gen_ice_slime():
+    W = H = 16
+    img = new_sheet(4, W, H)
+    px = img.load()
+    ICE = (150, 220, 245, 255)
+    ICE_D = (95, 165, 210, 255)
+    ICE_L = (225, 250, 255, 255)
+
+    def crystal(fi, squash):
+        ox = fi * W
+        top = 7 + squash
+        # angular faceted body (triangle-ish stack)
+        for y in range(top, 15):
+            spread = min(6, y - top + 2)
+            for x in range(8 - spread, 8 + spread):
+                px[ox + x, y] = ICE if y < 13 else ICE_D
+        # facet highlights
+        px[ox + 6, top + 2] = ICE_L
+        px[ox + 7, top + 1] = ICE_L
+        px[ox + 9, top + 3] = ICE_L
+        # crystal spike on top
+        px[ox + 8, top - 1] = ICE_L
+        px[ox + 8, top - 2] = ICE
+        # eyes
+        px[ox + 6, top + 4] = BLACK
+        px[ox + 10, top + 4] = BLACK
+        outline(px, W, H, ox, 0)
+
+    crystal(0, 0)
+    crystal(1, 1)
+    crystal(2, -1)
+    ox = 3 * W                     # shatter
+    for x, y in [(4, 12), (6, 10), (8, 13), (10, 11), (12, 12), (7, 12), (9, 9)]:
+        px[ox + x, y] = ICE_D
+    outline(px, W, H, ox, 0)
+    img.save(os.path.join(OUT, "ice_slime.png"))
+
+
 # ---------------------------------------------------------------- boss 32x32 x4
 def gen_boss():
     W = H = 32
@@ -609,6 +769,10 @@ def gen_torch():
 
 def main():
     gen_heroes()
+    gen_imp()
+    gen_spitter()
+    gen_ghost()
+    gen_ice_slime()
     gen_slime()
     gen_bat()
     gen_mage()

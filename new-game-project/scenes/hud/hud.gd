@@ -15,6 +15,7 @@ var _vig_t := 0.0
 @onready var weapon_label: Label = $WeaponLabel
 @onready var chapter_label: Label = $ChapterLabel
 @onready var room_label: Label = $RoomLabel
+@onready var enemies_label: Label = $EnemiesLabel
 @onready var dash_fill: ColorRect = $DashBar/Fill
 @onready var boss_bar: Control = $BossBar
 @onready var boss_fill: ColorRect = $BossBar/Fill
@@ -46,6 +47,13 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	var n := get_tree().get_nodes_in_group("enemies").size()
+	if n <= 0:
+		enemies_label.text = ""
+	elif n == 1:
+		enemies_label.text = "1 enemy left"
+	else:
+		enemies_label.text = "%d enemies left" % n
 	if _low and not GameManager.is_game_over:
 		_vig_t += delta
 		vignette.modulate.a = 0.12 + sin(_vig_t * 6.0) * 0.10

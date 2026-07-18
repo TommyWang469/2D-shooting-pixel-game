@@ -7,7 +7,8 @@ class_name Character
 const CATALOG := {
 	"gunner": {
 		"display_name": "Gunner",
-		"skill": "Rapid Trigger — +25% fire rate, balanced all-rounder.",
+		"skill": "OVERDRIVE — dashing doubles fire rate for 1.6s. +25% base fire rate.",
+		"skill_id": "overdrive",
 		"max_hp": 4,
 		"speed": 118.0,
 		"dash_cooldown": 0.85,
@@ -18,7 +19,8 @@ const CATALOG := {
 	},
 	"knight": {
 		"display_name": "Knight",
-		"skill": "Iron Body — +2 max HP and a shotgun, but slower and heavier dash.",
+		"skill": "SHIELD BASH — dashing smashes enemies aside (damage + heavy knockback). +2 max HP.",
+		"skill_id": "bash",
 		"max_hp": 6,
 		"speed": 104.0,
 		"dash_cooldown": 1.15,
@@ -29,7 +31,8 @@ const CATALOG := {
 	},
 	"rogue": {
 		"display_name": "Rogue",
-		"skill": "Fleetfoot — fast, short dash cooldown, SMG. Glass cannon (3 HP).",
+		"skill": "AMBUSH — first shot after a dash deals 3x damage. Fast, rapid dashes, 3 HP.",
+		"skill_id": "ambush",
 		"max_hp": 3,
 		"speed": 140.0,
 		"dash_cooldown": 0.5,

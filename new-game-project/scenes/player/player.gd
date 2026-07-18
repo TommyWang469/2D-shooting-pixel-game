@@ -34,6 +34,12 @@ var _speed := 118.0
 var _dash_cooldown := 0.85
 var _fire_rate_mult := 1.0
 var _tint := Color.WHITE
+var _skill_id := ""
+
+# skill state
+var _overdrive := 0.0            # gunner: fire-rate burst after dash
+var _ambush := 0.0               # rogue: 3x-damage window after dash
+var _bash_hits: Array = []       # knight: enemies already hit this dash
 
 var _invincible := 0.0
 var _fire_cd := 0.0
@@ -71,6 +77,7 @@ func _apply_character() -> void:
 	_speed = ch["speed"]
 	_dash_cooldown = ch["dash_cooldown"]
 	_fire_rate_mult = ch["fire_rate_mult"]
+	_skill_id = ch.get("skill_id", "")
 	_tint = ch["tint"]
 	sprite.modulate = _tint
 	weapons = [Weapon.by_id(ch["start_weapon"])]
@@ -97,6 +104,8 @@ func _physics_process(delta: float) -> void:
 		_dash_time -= delta
 		velocity = _dash_vec
 		_spawn_ghost(delta)
+		if _skill_id == "bash":
+			_bash_sweep()
 	else:
 		velocity = input.normalized() * _speed
 		if _dash_cd <= 0.0 and Input.is_action_just_pressed("dash"):
@@ -116,7 +125,10 @@ func _physics_process(delta: float) -> void:
 
 	if Input.is_action_pressed("shoot") and _fire_cd <= 0.0 and _dash_time <= 0.0:
 		_fire()
-		_fire_cd = 1.0 / (weapon.fire_rate * _fire_rate_mult)
+		var rate := weapon.fire_rate * _fire_rate_mult
+		if _overdrive > 0.0:
+			rate *= 2.0
+		_fire_cd = 1.0 / rate
 
 	_animate(delta, input.length() > 0.1)
 
@@ -134,6 +146,10 @@ func _update_timers(delta: float) -> void:
 		sprite.visible = true
 	if _fire_cd > 0.0:
 		_fire_cd -= delta
+	if _overdrive > 0.0:
+		_overdrive -= delta
+	if _ambush > 0.0:
+		_ambush -= delta
 
 
 func _start_dash(input: Vector2) -> void:
@@ -145,6 +161,29 @@ func _start_dash(input: Vector2) -> void:
 	Audio.play("dash", 0.1, -3.0)
 	Juice.shake(0.12)
 	dash_changed.emit(0.0)
+	# hero skill triggers
+	match _skill_id:
+		"overdrive":
+			_overdrive = 1.6
+			_spawn_float("OVERDRIVE!", Color(1.0, 0.85, 0.3), 12)
+		"ambush":
+			_ambush = 1.6
+		"bash":
+			_bash_hits.clear()
+
+
+## Knight skill: dashing smashes through enemies — damage + heavy knockback.
+func _bash_sweep() -> void:
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if not is_instance_valid(e) or _bash_hits.has(e):
+			continue
+		if global_position.distance_to(e.global_position) < 16.0:
+			_bash_hits.append(e)
+			if e.has_method("take_damage"):
+				e.take_damage(2)
+			if e.has_method("apply_knockback"):
+				e.apply_knockback(_dash_vec.normalized() * 220.0)
+			Juice.shake(0.15)
 
 
 func _spawn_ghost(delta: float) -> void:
@@ -184,11 +223,16 @@ func _fire() -> void:
 	var world := get_tree().current_scene
 	if world == null:
 		return
+	var dmg := weapon.damage
+	if _ambush > 0.0:                       # rogue: ambush strike
+		dmg *= 3
+		_ambush = 0.0
+		_spawn_float("AMBUSH x3!", Color(0.7, 1.0, 0.6), 12)
 	for a in weapon.shot_angles():
 		var jitter := deg_to_rad(randf_range(-weapon.spread_deg, weapon.spread_deg))
 		var dir := aim_dir.rotated(a + jitter)
 		var b := BULLET.instantiate()
-		b.setup(dir, weapon.bullet_speed, weapon.damage, weapon.bullet_options())
+		b.setup(dir, weapon.bullet_speed, dmg, weapon.bullet_options())
 		world.add_child(b)
 		b.global_position = muzzle
 	Audio.play("shoot", 0.08, -6.0)

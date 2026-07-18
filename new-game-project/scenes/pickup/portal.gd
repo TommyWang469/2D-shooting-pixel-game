@@ -14,6 +14,7 @@ var _used := false
 
 func _ready() -> void:
 	add_to_group("transient")
+	add_to_group("portal")
 	sprite.texture = load("res://assets/portal.png")
 	sprite.hframes = 4
 	scale = Vector2.ZERO

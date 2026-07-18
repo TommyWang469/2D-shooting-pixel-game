@@ -4,10 +4,16 @@ extends Node
 ## it asks the Main room generator for valid tiles — and every spawn is themed to
 ## the current biome (tint, stats, boss attack pattern).
 
-const SLIME := preload("res://scenes/enemy/slime.tscn")
-const BAT := preload("res://scenes/enemy/bat.tscn")
-const MAGE := preload("res://scenes/enemy/mage.tscn")
 const BOSS := preload("res://scenes/enemy/boss.tscn")
+const ENEMY_SCENES := {
+	"slime": preload("res://scenes/enemy/slime.tscn"),
+	"bat": preload("res://scenes/enemy/bat.tscn"),
+	"mage": preload("res://scenes/enemy/mage.tscn"),
+	"imp": preload("res://scenes/enemy/imp.tscn"),
+	"spitter": preload("res://scenes/enemy/spitter.tscn"),
+	"ghost": preload("res://scenes/enemy/ghost.tscn"),
+	"ice_slime": preload("res://scenes/enemy/ice_slime.tscn"),
+}
 const CHEST := preload("res://scenes/pickup/chest.tscn")
 const PORTAL := preload("res://scenes/pickup/portal.tscn")
 const SHOP := preload("res://scenes/pickup/shop_station.tscn")
@@ -72,15 +78,22 @@ func _banner(title: String, subtitle: String, color: Color) -> void:
 func _spawn_combat() -> void:
 	var d := GameManager.difficulty()
 	var total := 3 + int(round(d * 2.5))
+	var roster: Array = _theme().roster
 	for i in total:
-		var r := randf()
-		var scene := SLIME
-		if d > 1.3 and r < 0.22:
-			scene = MAGE
-		elif r < 0.5:
-			scene = BAT
-		_spawn(scene)
+		_spawn(ENEMY_SCENES[_pick_from_roster(roster)])
 	_scatter_loot()
+
+
+func _pick_from_roster(roster: Array) -> String:
+	var total := 0.0
+	for entry in roster:
+		total += entry[1]
+	var r := randf() * total
+	for entry in roster:
+		r -= entry[1]
+		if r <= 0.0:
+			return entry[0]
+	return roster[0][0]
 
 
 func _scatter_loot() -> void:

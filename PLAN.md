@@ -174,6 +174,37 @@ exercising Mage / Boss (damage→death→signals) / chest weapon-swap / portal �
 - Verified: 12 consecutive generated rooms across all 3 themes all valid
   (202–511 floor tiles, varied silhouettes), 500-frame gameplay run clean.
 
+### 2026-07-18 — Enemy variety & hero skills
+- **4 new enemies, each with its own generated art and mechanic:**
+  - **Imp** (Ember) — stalks, crouches (bright-eye windup frame), then **lunges** at 265px/s; vulnerable while recovering.
+  - **Magma Spitter** (Ember) — stationary rock turret; opens a molten mouth and fires a **3-way spread**; 6 HP, 75% knockback resist.
+  - **Ghost** (Frost) — **phases through walls/obstacles** (collision mask 0), fades in/out, 2 contact damage.
+  - **Ice Slime** (Frost) — slow 5-HP crystal slime that **splits into 2 fast mini shards** on death (minis don't re-split).
+- **Biome rosters** (weighted, in `theme.gd`): Stone = slime/bat/mage · Ember =
+  imp/spitter/bat · Frost = ice_slime/ghost/mage. Dungeon picks from the roster.
+- **Hero active skills** (trigger on dash, per `skill_id`):
+  - Gunner **OVERDRIVE** — 2x fire rate for 1.6s after dashing.
+  - Knight **SHIELD BASH** — dashing damages (+2) and hurls aside enemies you pass through.
+  - Rogue **AMBUSH** — first shot within 1.6s after a dash deals 3x damage.
+  Card text on the select screen describes each skill.
+- Verified: all 4 enemies spawn clean, ice-slime split confirmed (4→5 enemies),
+  rosters/skills wired, 500-frame run zero errors.
+- Note: codedb (code-graph MCP) was requested — daemon stuck in `loading_snapshot`
+  this session; game repo indexing pending, native tools used instead.
+
+### 2026-07-18 — "No door" investigation & guide arrow
+- Reproduced the report with a temporary autoload **auto-player** (kills every enemy,
+  stomps every portal): progression ran Ch1→Ch3 flawlessly — portals always spawn on
+  clear. Root cause of the report: the camera shows ~half the room, and the new
+  **stationary Spitter** can sit alive off-screen — the room *isn't* clear, and there
+  was no way to know or find it.
+- Fixes, Soul Knight style:
+  - **Guide arrow** (`scenes/player/pointer.gd`, orbits the player): points at the
+    nearest enemy when ≤3 remain (red), and at the **exit portal** when the room is
+    clear (purple). Hides when the target is close.
+  - **HUD enemy counter** ("3 enemies left", top right) during combat.
+- Portals joined a `portal` group; auto-play re-verified Ch1→Ch3 with the new UI.
+
 ### Ideas for further passes
 - Unique boss sprites per chapter; more enemy types; status effects (freeze/burn).
 - A minimap; controller support; settings menu (volume sliders).
