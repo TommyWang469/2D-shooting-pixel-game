@@ -16,6 +16,7 @@ const CATALOG := {
 		"start_weapon": "blaster",
 		"tint": Color(1.0, 1.0, 1.0),
 		"sprite": "res://assets/player.png",
+		"unlock_cost": 0,
 	},
 	"knight": {
 		"display_name": "Knight",
@@ -28,6 +29,7 @@ const CATALOG := {
 		"start_weapon": "shotgun",
 		"tint": Color(1.0, 1.0, 1.0),
 		"sprite": "res://assets/knight.png",
+		"unlock_cost": 60,
 	},
 	"rogue": {
 		"display_name": "Rogue",
@@ -40,6 +42,7 @@ const CATALOG := {
 		"start_weapon": "smg",
 		"tint": Color(1.0, 1.0, 1.0),
 		"sprite": "res://assets/rogue.png",
+		"unlock_cost": 90,
 	},
 }
 

@@ -87,7 +87,7 @@ func _puff(pos: Vector2) -> void:
 
 func _start_after(delay: float) -> void:
 	_state = "transition"
-	await get_tree().create_timer(delay).timeout
+	await get_tree().create_timer(delay, false).timeout
 	if GameManager.is_game_over or not is_inside_tree():
 		return
 	_begin_room()
@@ -158,11 +158,11 @@ func _drop_pickup(kind: String, pos: Vector2) -> void:
 func _spawn_boss() -> void:
 	var t := _theme()
 	var b := BOSS.instantiate()
+	b.kind = t.get("id", "stone")   # before add_child: _ready reads it
 	var world := get_tree().current_scene
 	world.add_child(b)
 	b.global_position = _main().top_pos() + Vector2(0, 24)
 	b.apply_theme(t.boss_tint, t.hp_mult, t.speed_mult)
-	b.attack_weights = t.boss_weights
 	if _hud and _hud.has_method("show_boss"):
 		b.health_changed.connect(_hud.show_boss)
 	b.died.connect(_on_boss_died)
@@ -174,6 +174,9 @@ func _spawn(scene: PackedScene) -> void:
 	get_tree().current_scene.add_child(e)
 	e.global_position = _rand_pos()
 	e.apply_theme(t.enemy_tint, t.hp_mult, t.speed_mult)
+	# Elite roll: golden, tanky, guaranteed gems. Slightly more common deeper in.
+	if randf() < minf(0.07 + 0.01 * GameManager.chapter, 0.15):
+		e.make_elite()
 
 
 func _rand_pos() -> Vector2:
@@ -184,6 +187,7 @@ func _rand_pos() -> Vector2:
 func _on_boss_died() -> void:
 	if _state != "boss":
 		return
+	Audio.play_music(_theme().get("music", "stone"))   # tension off, shop time
 	_clear_enemies()
 	_room_cleared(true)
 
@@ -194,7 +198,7 @@ func _room_cleared(was_boss: bool) -> void:
 	_state = "transition"
 	GameManager.add_score(150 if was_boss else 25)
 	var give_chest := was_boss or randf() < 0.4
-	await get_tree().create_timer(0.7).timeout
+	await get_tree().create_timer(0.7, false).timeout
 	if GameManager.is_game_over or not is_inside_tree():
 		return
 	var m := _main()

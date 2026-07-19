@@ -31,10 +31,11 @@ var weapon_index := 0
 var max_weapon_slots := 1               ## buy more at the boss-room Workshop
 var aim_dir := Vector2.RIGHT
 
-# character-derived stats
+# character-derived stats (permanent Save upgrades are folded in on spawn)
 var _speed := 118.0
 var _dash_cooldown := 0.85
 var _fire_rate_mult := 1.0
+var _damage_mult := 1.0
 var _tint := Color.WHITE
 var _skill_id := ""
 
@@ -76,11 +77,12 @@ func _ready() -> void:
 func _apply_character() -> void:
 	var ch := Character.get_data(GameManager.character_id)
 	sprite.texture = load(ch.get("sprite", "res://assets/player.png"))
-	max_hp = ch["max_hp"]
+	max_hp = ch["max_hp"] + Save.upgrade_level("vitality")
 	hp = max_hp
-	_speed = ch["speed"]
-	_dash_cooldown = ch["dash_cooldown"]
+	_speed = ch["speed"] * (1.0 + 0.05 * Save.upgrade_level("swiftness"))
+	_dash_cooldown = ch["dash_cooldown"] * (1.0 - 0.08 * Save.upgrade_level("recovery"))
 	_fire_rate_mult = ch["fire_rate_mult"]
+	_damage_mult = 1.0 + 0.10 * Save.upgrade_level("power")
 	_skill_id = ch.get("skill_id", "")
 	_tint = ch["tint"]
 	sprite.modulate = _tint
@@ -243,7 +245,7 @@ func _fire() -> void:
 	var world := get_tree().current_scene
 	if world == null:
 		return
-	var dmg := weapon.damage
+	var dmg := maxi(weapon.damage, int(round(weapon.damage * _damage_mult)))
 	if _ambush > 0.0:                       # rogue: ambush strike
 		dmg *= 3
 		_ambush = 0.0

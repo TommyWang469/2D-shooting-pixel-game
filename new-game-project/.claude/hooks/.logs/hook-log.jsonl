@@ -21,3 +21,7 @@
 {"ts":"2026-07-18T23:21:30.642Z","hook":"scout-block","action":"block","tool":"Bash","path":"logs/windowed_run.log","matched":"new-game-project/logs/windowed_run.log"}
 {"ts":"2026-07-18T23:26:22.337Z","hook":"iteration-context","action":"skip","iterationCount":2}
 {"ts":"2026-07-18T23:39:28.812Z","hook":"iteration-context","action":"skip","iterationCount":3}
+{"ts":"2026-07-19T06:28:32.542Z","hook":"iteration-context","action":"skip","iterationCount":4}
+{"ts":"2026-07-19T06:28:32.620Z","hook":"simplify-gate","loc":744,"action":"warn"}
+{"ts":"2026-07-19T06:50:34.282Z","hook":"iteration-context","action":"skip","iterationCount":5,"reason":"no-tsv"}
+{"ts":"2026-07-19T06:56:59.656Z","hook":"iteration-context","action":"skip","iterationCount":6}

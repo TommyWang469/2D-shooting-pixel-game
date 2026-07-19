@@ -12,6 +12,8 @@ var _max_hp := 0
 var _low := false
 var _vig_t := 0.0
 var _settings: Control
+var _map_tex: ImageTexture         ## minimap floor silhouette, rebuilt per room
+var _map_scale := 2.0
 
 @onready var hearts_box: HBoxContainer = $HeartsBox
 @onready var coin_icon: TextureRect = $CoinIcon
@@ -35,6 +37,10 @@ var _settings: Control
 @onready var victory_label: Label = $Victory/Panel/Text
 @onready var pause_panel: Control = $Pause
 @onready var pause_resume: Button = $Pause/Panel/VBox/ResumeBtn
+@onready var gem_icon: TextureRect = $GemIcon
+@onready var gem_label: Label = $GemLabel
+@onready var minimap: Control = $Minimap
+@onready var fade: ColorRect = $Fade
 
 
 func _ready() -> void:
@@ -53,10 +59,15 @@ func _ready() -> void:
 	GameManager.room_changed.connect(_on_room)
 	GameManager.game_over_triggered.connect(_on_game_over)
 	GameManager.victory_triggered.connect(_on_victory)
+	Save.gems_changed.connect(_on_gems)
+	gem_icon.texture = _atlas("res://assets/gem.png", Rect2(0, 0, 8, 8))
+	_on_gems(Save.gems)
+	minimap.draw.connect(_draw_minimap)
 	_on_coins(GameManager.coins)
 	_on_score(GameManager.score)
 	_on_chapter(GameManager.chapter)
 	_on_room(GameManager.room)
+	_run_fade()
 	# pause menu
 	pause_resume.pressed.connect(_toggle_pause)
 	$Pause/Panel/VBox/SettingsBtn.pressed.connect(_open_settings)
@@ -83,6 +94,7 @@ func _process(delta: float) -> void:
 		vignette.modulate.a = 0.12 + sin(_vig_t * 6.0) * 0.10
 	elif vignette.modulate.a > 0.0:
 		vignette.modulate.a = maxf(vignette.modulate.a - delta, 0.0)
+	minimap.queue_redraw()
 
 
 func _atlas(path: String, region: Rect2) -> AtlasTexture:
@@ -134,6 +146,57 @@ func _on_chapter(chapter: int) -> void:
 
 func _on_room(room: int) -> void:
 	room_label.text = "Boss" if room >= GameManager.ROOMS_PER_CHAPTER else "Room %d" % room
+	# Deferred: Main regenerates its grid in this same signal emission.
+	call_deferred("_rebuild_minimap")
+	_run_fade()
+
+
+func _on_gems(total: int) -> void:
+	gem_label.text = "%d" % total
+
+
+# ================================================================ minimap & fade
+## Bake the room's floor silhouette into a tiny texture (1px per tile).
+func _rebuild_minimap() -> void:
+	var main := get_tree().current_scene
+	if main == null or not "grid" in main or main.grid.is_empty():
+		return
+	var img := Image.create(main.GW, main.GH, false, Image.FORMAT_RGBA8)
+	for y in main.GH:
+		for x in main.GW:
+			if main.grid[y][x]:
+				img.set_pixel(x, y, Color(1, 1, 1, 0.30))
+	_map_tex = ImageTexture.create_from_image(img)
+	_map_scale = minimap.size.x / float(main.GW)
+
+
+func _draw_minimap() -> void:
+	if _map_tex == null or GameManager.is_game_over:
+		return
+	var main := get_tree().current_scene
+	if main == null:
+		return
+	minimap.draw_texture_rect(_map_tex, Rect2(Vector2.ZERO, _map_tex.get_size() * _map_scale), false)
+	var world_to_map := _map_scale / float(main.TILE)
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if is_instance_valid(e):
+			var col := Color(1.0, 0.82, 0.3) if e.get("elite") else Color(1.0, 0.35, 0.35)
+			minimap.draw_rect(Rect2(e.global_position * world_to_map - Vector2.ONE, Vector2(2, 2)), col)
+	for p in get_tree().get_nodes_in_group("portal"):
+		if is_instance_valid(p):
+			minimap.draw_rect(Rect2(p.global_position * world_to_map - Vector2.ONE, Vector2(3, 3)),
+					Color(0.75, 0.6, 1.0))
+	var player := get_tree().get_first_node_in_group("player")
+	if player:
+		minimap.draw_rect(Rect2(player.global_position * world_to_map - Vector2.ONE, Vector2(2, 2)),
+				Color.WHITE)
+
+
+## Black dip that softens every room change (and the scene start).
+func _run_fade() -> void:
+	fade.modulate.a = 1.0
+	var tw := create_tween()
+	tw.tween_property(fade, "modulate:a", 0.0, 0.45)
 
 
 func _on_weapons(names: Array, index: int, slots: int) -> void:
@@ -230,8 +293,9 @@ func _continue_endless() -> void:
 func _on_victory() -> void:
 	get_tree().paused = true
 	victory_panel.visible = true
-	victory_label.text = "VICTORY!\n\nAll three depths conquered.\n\nScore: %d   (+%d bonus)\nKills: %d\n\nKeep descending in Endless Mode?" % [
-		GameManager.score, GameManager.VICTORY_BONUS, GameManager.kills
+	victory_label.text = "VICTORY!\n\nAll three depths conquered.\n\nScore: %d   (+%d bonus)\nKills: %d\n◆ +%d gems banked  (total %d)\n\nKeep descending in Endless Mode?" % [
+		GameManager.score, GameManager.VICTORY_BONUS, GameManager.kills,
+		GameManager.gems_run, Save.gems
 	]
 	$Victory/Panel/Buttons/ContinueBtn.grab_focus()
 	Audio.play("upgrade", 0.0, 2.0)
@@ -240,9 +304,9 @@ func _on_victory() -> void:
 func _on_game_over() -> void:
 	var best_line := "NEW BEST SCORE!" if GameManager.last_run_new_best \
 			else "Best: %d" % Save.best_score
-	final_label.text = "GAME OVER\n\nChapter %d  ·  Room %d\nScore: %d\n%s\nKills: %d" % [
+	final_label.text = "GAME OVER\n\nChapter %d  ·  Room %d\nScore: %d\n%s\nKills: %d\n◆ +%d gems banked  (total %d)" % [
 		GameManager.chapter, GameManager.room, GameManager.score,
-		best_line, GameManager.kills
+		best_line, GameManager.kills, GameManager.gems_run, Save.gems
 	]
 	game_over_panel.visible = true
 	$GameOver/Panel/Buttons/RestartBtn.grab_focus()

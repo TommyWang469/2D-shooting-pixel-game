@@ -283,6 +283,138 @@ both ends + a soft cue). Timer resets on every kill and each new room.
 Verified by `tests/stall.gd`: plants a spitter 273px away, never attacks —
 relocated at 10.2s; full 22-check smoke suite still green.
 
+### 2026-07-18 — Unique bosses per chapter
+Each biome now fields its own boss: art, stats and attack kit (`boss.gd` KINDS
+catalog; the dungeon sets `kind` from the theme's `id` before spawning; the old
+per-theme `boss_weights` are gone).
+
+- **THE SUMMONER KING** (Stone, `boss_stone.png` — crowned slime): ring · summon
+  slimes/bats · **QUAKE** (two staggered 8-bullet rings, slow then fast) · rare charge.
+- **THE MAGMA TYRANT** (Ember, `boss_ember.png` — horned lava-cracked rock beast):
+  fast (42 spd, lower HP), **ERUPTION** (three aimed 5-way volleys) · frequent
+  charges · occasional ring.
+- **THE FROZEN WARDEN** (Frost, `boss_frost.png` — crystal monolith, shatters on
+  death): slow tank (54 HP), **SPIRAL** (14-bullet rotating barrage) · ring ·
+  **SHARDS** (spawns chasing ice-slime minis).
+
+Async patterns guard against dying mid-attack; `_attacking` blocks overlap and
+holds the attack frame. Theme boss tints softened to near-white since the art now
+carries identity. Verified by `tests/bosses.gd`: fights all three in sequence —
+kind + unique sprite + projectiles + adds per boss (forced fast cadence so every
+pattern rolls) — ALL PASS; 22-check smoke suite still green.
+
+### 2026-07-18 — Commercial pass (PLAN)
+Goal: a game people would PAY for. The biggest gap vs. Soul Knight (the genre's
+money-maker) is that runs leave nothing behind — no reason for "one more run".
+Scope, in order:
+
+**M1 — Meta-progression (the retention core)**
+- **Gems**: persistent currency. Sources: elite enemies (guaranteed), bosses (4–6),
+  victory (+12). Banked to the save immediately on pickup; shown in HUD + menus.
+- **Elite enemies**: ~8%/spawn (scales with chapter, cap 15%) — golden, 2.2× HP,
+  1.15× speed, 1.25× scale, +coins, guaranteed gem(s). Risk/reward beacon.
+- **Permanent upgrades** (bought with gems, applied at run start):
+  Vitality +1 start HP ×3 · Power +10% dmg ×3 · Swiftness +5% speed ×2 ·
+  Recovery −8% dash CD ×2 · Fortune +20% coin chance ×2 · Magnet +12px ×2.
+  Escalating costs. Upgrades overlay reachable from character select (U).
+- **Hero unlocks**: Gunner free; Knight 60 gems; Rogue 90 gems. Locked cards show
+  the price, Enter/click unlocks when affordable.
+
+**M2 — Content depth**
+- 2 new weapons: **Homing Wand** (bullets steer to nearby enemies) and **Railgun**
+  (instant-feel pierce-everything sniper). Homing = new bullet option.
+- **Boss music**: 4th generated track, driving & tense; boss rooms switch to it,
+  biome track returns the moment the boss dies.
+
+**M3 — Presentation**
+- **Minimap** (top-right): room silhouette baked to a texture on regen; live dots
+  for player / enemies / portal. Kills the "where's the last enemy" pain for good.
+- **Room-transition fade**: black dip on every room change; softens the pop.
+- Gem readouts on HUD and char select; unlock/gem SFX; gem sparkle art.
+
+**M4 — Bug hunt (found while planning)**
+- `get_tree().create_timer()` defaults to process_always — boss async attacks
+  (quake/eruption/spiral) and dungeon transition timers KEEP RUNNING WHILE PAUSED.
+  Pass `false` so pause actually pauses the fight.
+
+**M5 — Store-readiness**
+- `STORE.md`: itch.io page copy, publishing checklist (web build, screenshots,
+  pricing guidance). Version → 1.1.0.
+
+**Testing**: new `tests/meta.gd` (gem drops → bank, upgrade buy/apply, hero
+unlock, elite stats, new weapons); rerun smoke/bosses/stall/combat suites; final
+windowed launch.
+
+### 2026-07-18 — Commercial pass (DONE) → v1.1.0
+Everything in the commercial plan shipped:
+
+- **Gems + meta-progression**: `Save` gained gems/upgrades/heroes (+APIs:
+  `buy_upgrade`, `unlock_hero`, `upgrade_level`); gems bank instantly on pickup.
+  Sources: elites (1–2), bosses (4–6), victory (+12); gems also give score.
+  Grandfather clause keeps heroes unlocked on pre-meta saves.
+- **Elites**: ~7–15% spawn roll → golden, 2.2× HP, 1.15× speed, 1.25× scale,
+  extra coins + guaranteed gems. Gold dots on the minimap.
+- **Permanent upgrades** (6): Vitality/Power/Swiftness/Recovery/Fortune/Magnet,
+  bought in the new upgrades overlay (U on char select), applied in
+  `player._apply_character`, `enemy._drop_loot` (fortune) and `pickup` (magnet).
+- **Hero unlocks**: Knight 60 / Rogue 90 gems; locked cards are silhouetted with
+  the price; confirm unlocks (unlock fanfare SFX).
+- **New weapons**: Homing Wand (bullets steer via new `homing` bullet option) and
+  Railgun (720 speed, pierce 99). Chest pool now 7 weapons.
+- **Boss music**: `music_boss.wav` (150bpm) in boss rooms; biome track returns on
+  boss death. New SFX: gem, unlock. New art: gem sparkle sheet.
+- **Minimap** (top-right): floor silhouette baked per room + live dots (white
+  player, red enemies, gold elites, purple portal). **Fade**: black dip on every
+  room change. HUD + char select show banked gems.
+- **Bug fix**: `create_timer` defaults to process_always — boss async attacks and
+  dungeon transitions kept running while PAUSED; all now pass `false`.
+- **Store-readiness**: `STORE.md` (itch copy, publishing checklist, pricing,
+  roadmap); version 1.1.0.
+- **Tests**: new `tests/meta.gd` (17 checks: upgrade/unlock API, spawn
+  application, weapons, elite drops → banked gems, minimap). Full battery —
+  meta + smoke (22) + bosses + stall + combat — **ALL PASS**, clean windowed boot.
+
+### 2026-07-18 — Gem clarity + weapon expansion
+Player feedback: "gems should accumulate each time; more weapons."
+
+- **Gems were already accumulating** (proved with `tests/persist.gd`: two separate
+  boots — 27→32, then 32→37, riding the real save) — the problem was zero
+  feedback. Game-over and victory screens now show "◆ +N gems banked (total M)".
+- **5 new weapons** (pool 12, 13 with the Blaster): **Crossbow** (heavy bolt,
+  pierce 1), **Flame Spitter** (10/s twin short-range cone), **Ricochet** (bounces
+  off walls 3×, grid-based reflection), **Frost Bow** (chills enemies to 55%
+  speed for 1.4s, icy tint), **Minigun** (16/s spray). Two new bullet mechanics:
+  `bounce` (wall reflection via room grid) and `slow` (+`Enemy.apply_slow`).
+- Tests: meta suite grew to 22 checks (all pool weapons build, ricochet/frost
+  options, slow application); full battery meta+smoke+bosses+combat ALL PASS.
+
+### 2026-07-18 — Art pass (PLAN)
+Thesis: the game plays rich but looks samey. Make each biome a *place*, each
+weapon an *object*, and the UI *designed* — all still generated by gen_art.py.
+
+**A1 — Biome environments**
+- Per-biome floor + wall tiles (2 floor variants each, hash-picked per tile):
+  Stone = cracked flagstones & brick courses · Ember = basalt with glowing lava
+  veins · Frost = ice with facets and bubbles. Theme tints soften (art carries color).
+- 3 decor decals per biome (skull/moss/rubble · fissure/cinder/obsidian ·
+  crystal/snow/frozen tuft) scattered on open floor, non-colliding.
+- Ambient particles per biome: rising embers · drifting snow · faint dust.
+
+**A2 — Weapon identity**
+- 6 distinct bullet sprites (bolt, flame blob, ice shard, energy beam, wand star,
+  ricochet disc) wired via the weapon catalog; others keep the classic shot.
+- 13 unique ground-icon sprites, one per weapon (pistol → minigun), replacing the
+  single tinted silhouette.
+
+**A3 — UI & title**
+- Code-built root Theme: dark-violet panels, glowing borders, hover/pressed
+  button states — replaces the default gray Godot look everywhere at once.
+- Title screen: generated dithered backdrop (gradient night + brick silhouette +
+  torch glows), ambient ember particles, all-three-heroes lineup.
+- Elite glow: pulsing golden aura sprite under elite enemies.
+
+**Test**: regen art → import → eyeball upscaled sheets → full battery → windowed.
+
 ### Ideas for further passes
 - Unique boss sprites per chapter; more enemy types; status effects (freeze/burn).
 - A minimap; destructible obstacles / cover that breaks under fire.

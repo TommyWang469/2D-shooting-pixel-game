@@ -42,7 +42,7 @@ func _ready() -> void:
 func _regen_room() -> void:
 	theme = DungeonTheme.for_chapter(GameManager.chapter)
 	canvas_modulate.color = theme.ambient
-	Audio.play_music(theme.get("music", "stone"))
+	Audio.play_music("boss" if GameManager.is_boss_room() else theme.get("music", "stone"))
 	_gen_grid(GameManager.is_boss_room())
 	_build_collision()
 	_place_torches()

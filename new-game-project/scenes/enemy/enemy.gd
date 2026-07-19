@@ -20,10 +20,15 @@ const KNOCKBACK_DECAY := 320.0
 @export var sheet_hframes := 4
 @export var death_frame := 3
 @export var body_color := Color(0.5, 0.85, 0.4)
+@export var gem_min := 0          ## gems dropped on death (elites and bosses)
+@export var gem_max := 0
 
 var hp := 3
+var elite := false                ## golden variant: tanky, fast, drops gems
 var base_tint := Color.WHITE      ## theme tint, set via apply_theme()
 var player: Node2D
+var _slow_mult := 1.0             ## Frost Bow chill: velocity factor while slowed
+var _slow_t := 0.0
 var _knockback := Vector2.ZERO
 var _hit_flash := 0.0
 var _contact_cd := 0.0
@@ -53,6 +58,11 @@ func _physics_process(delta: float) -> void:
 	var move := Vector2.ZERO
 	if player and is_instance_valid(player):
 		move = _ai_velocity(delta)
+	if _slow_t > 0.0:
+		_slow_t -= delta
+		move *= _slow_mult
+		if _slow_t <= 0.0:
+			_slow_mult = 1.0
 	velocity = move + _knockback
 	move_and_slide()
 	_knockback = _knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * delta)
@@ -85,6 +95,8 @@ func _tick(delta: float) -> void:
 	if _hit_flash > 0.0:
 		_hit_flash -= delta
 		sprite.modulate = Color(2.2, 2.2, 2.2)
+	elif _slow_t > 0.0:
+		sprite.modulate = base_tint.lerp(Color(0.55, 0.8, 1.3), 0.5)   # chilled
 	else:
 		sprite.modulate = base_tint
 
@@ -99,6 +111,28 @@ func apply_theme(tint: Color, hp_mult: float, speed_mult: float) -> void:
 	hp = max_hp
 	speed *= speed_mult
 	body_color = body_color.lerp(tint, 0.5)
+
+
+## Promote to a golden elite: tanky, faster, bigger — and guaranteed gems.
+func make_elite() -> void:
+	elite = true
+	max_hp = maxi(2, int(round(max_hp * 2.2)))
+	hp = max_hp
+	speed *= 1.15
+	scale *= 1.25
+	coin_min += 2
+	coin_max += 3
+	gem_min = maxi(gem_min, 1)
+	gem_max = maxi(gem_max, 2)
+	base_tint = base_tint.lerp(Color(1.0, 0.85, 0.3), 0.55)
+	sprite.modulate = base_tint
+	body_color = Color(1.0, 0.85, 0.3)
+
+
+## Frost Bow chill: cap the enemy's movement for a moment (stacks refresh, not add).
+func apply_slow(mult: float, dur: float) -> void:
+	_slow_mult = minf(_slow_mult if _slow_t > 0.0 else 1.0, mult)
+	_slow_t = maxf(_slow_t, dur)
 
 
 func apply_knockback(impulse: Vector2) -> void:
@@ -134,17 +168,21 @@ func _die() -> void:
 	sprite.modulate = base_tint
 	sprite.frame = death_frame
 	# Guarded free: something else (room sweep) may have freed us mid-corpse.
-	get_tree().create_timer(0.25).timeout.connect(func():
+	get_tree().create_timer(0.25, false).timeout.connect(func():
 		if is_instance_valid(self):
 			queue_free())
 
 
 func _drop_loot() -> void:
 	# Coins and hearts roll independently and scatter randomly around the corpse.
-	if randf() < coin_chance:
+	# The Fortune upgrade raises the coin odds; gems only come from elites/bosses.
+	var cc := minf(coin_chance * (1.0 + 0.2 * Save.upgrade_level("fortune")), 1.0)
+	if randf() < cc:
 		var count := randi_range(coin_min, coin_max)
 		for i in count:
 			_spawn_pickup("coin", 1, _rand_offset(18.0))
+	for i in randi_range(gem_min, gem_max):
+		_spawn_pickup("gem", 1, _rand_offset(16.0))
 	if randf() < heart_chance:
 		_spawn_pickup("heart", 1, _rand_offset(14.0))
 

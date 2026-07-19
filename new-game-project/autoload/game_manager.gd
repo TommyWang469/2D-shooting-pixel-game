@@ -19,6 +19,7 @@ const VICTORY_BONUS := 500
 
 var coins := 0
 var kills := 0
+var gems_run := 0              ## gems earned this run (banked to Save immediately)
 var score := 0
 var chapter := 1
 var room := 1
@@ -31,6 +32,7 @@ var character_id := "gunner"   ## chosen on the select screen; persists across r
 func reset_game() -> void:
 	coins = 0
 	kills = 0
+	gems_run = 0
 	score = 0
 	chapter = 1
 	room = 1
@@ -55,6 +57,13 @@ func add_coins(amount: int) -> void:
 func add_score(points: int) -> void:
 	score += points
 	score_changed.emit(score)
+
+
+func add_gems(amount: int) -> void:
+	gems_run += amount
+	score += amount * 5
+	score_changed.emit(score)
+	Save.add_gems(amount)
 
 
 func spend_coins(amount: int) -> bool:
@@ -85,6 +94,7 @@ func advance() -> void:
 		if chapter >= FINAL_CHAPTER and not has_won:
 			has_won = true
 			add_score(VICTORY_BONUS)
+			add_gems(12)
 			victory_triggered.emit()
 		chapter += 1
 		room = 1

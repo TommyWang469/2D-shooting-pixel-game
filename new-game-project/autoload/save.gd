@@ -6,6 +6,17 @@ extends Node
 const PATH := "user://save.json"
 
 signal settings_applied
+signal gems_changed(total: int)
+
+## Permanent upgrade catalog: id -> tiers (cost + per-tier effect described in UI).
+const UPGRADES := {
+	"vitality": {"name": "Vitality", "desc": "+1 starting max HP", "costs": [25, 50, 90]},
+	"power": {"name": "Power", "desc": "+10% weapon damage", "costs": [30, 60, 100]},
+	"swiftness": {"name": "Swiftness", "desc": "+5% move speed", "costs": [20, 45]},
+	"recovery": {"name": "Recovery", "desc": "-8% dash cooldown", "costs": [20, 45]},
+	"fortune": {"name": "Fortune", "desc": "+20% coin drops", "costs": [25, 55]},
+	"magnet": {"name": "Magnet", "desc": "+12px pickup magnet", "costs": [15, 35]},
+}
 
 # --- settings (0..1 volumes) ---
 var master_volume := 1.0
@@ -20,6 +31,11 @@ var best_chapter := 0
 var total_runs := 0
 var total_kills := 0
 var victories := 0
+
+# --- meta progression ---
+var gems := 0
+var upgrades := {}                     ## id -> owned tier (int)
+var heroes := ["gunner"]               ## unlocked character ids
 
 
 func _ready() -> void:
@@ -47,6 +63,22 @@ func _load() -> void:
 	total_runs = int(data.get("total_runs", 0))
 	total_kills = int(data.get("total_kills", 0))
 	victories = int(data.get("victories", 0))
+	gems = int(data.get("gems", 0))
+	var u: Variant = data.get("upgrades", {})
+	upgrades = {}
+	if u is Dictionary:
+		for k in u:
+			if UPGRADES.has(k):
+				upgrades[k] = int(u[k])
+	var h: Variant = data.get("heroes", ["gunner"])
+	heroes = ["gunner"]
+	if h is Array:
+		for id in h:
+			if not heroes.has(id):
+				heroes.append(str(id))
+	# Grandfather clause: saves from before the meta system keep all heroes.
+	if not data.has("heroes") and int(data.get("total_runs", 0)) > 0:
+		heroes = ["gunner", "knight", "rogue"]
 
 
 func save() -> void:
@@ -65,6 +97,9 @@ func save() -> void:
 		"total_runs": total_runs,
 		"total_kills": total_kills,
 		"victories": victories,
+		"gems": gems,
+		"upgrades": upgrades,
+		"heroes": heroes,
 	}, "  "))
 
 
@@ -88,6 +123,49 @@ func _set_bus(bus_name: String, linear: float) -> void:
 	if idx >= 0:
 		AudioServer.set_bus_volume_db(idx, linear_to_db(maxf(linear, 0.0001)))
 		AudioServer.set_bus_mute(idx, linear <= 0.001)
+
+
+# ================================================================ meta progression
+func add_gems(amount: int) -> void:
+	gems += amount
+	gems_changed.emit(gems)
+	save()
+
+
+func upgrade_level(id: String) -> int:
+	return int(upgrades.get(id, 0))
+
+
+func upgrade_next_cost(id: String) -> int:
+	## -1 when maxed.
+	var costs: Array = UPGRADES[id]["costs"]
+	var lvl := upgrade_level(id)
+	return -1 if lvl >= costs.size() else int(costs[lvl])
+
+
+func buy_upgrade(id: String) -> bool:
+	var cost := upgrade_next_cost(id)
+	if cost < 0 or gems < cost:
+		return false
+	gems -= cost
+	upgrades[id] = upgrade_level(id) + 1
+	gems_changed.emit(gems)
+	save()
+	return true
+
+
+func is_hero_unlocked(id: String) -> bool:
+	return heroes.has(id)
+
+
+func unlock_hero(id: String, cost: int) -> bool:
+	if heroes.has(id) or gems < cost:
+		return false
+	gems -= cost
+	heroes.append(id)
+	gems_changed.emit(gems)
+	save()
+	return true
 
 
 ## Record a finished run (death or quit-to-title mid-run). Returns true if the

@@ -667,6 +667,118 @@ def gen_boss():
         px[ox + x, 27] = SLIME
     outline(px, W, H, ox, 0)
     img.save(os.path.join(OUT, "boss.png"))
+    img.save(os.path.join(OUT, "boss_stone.png"))   # Summoner King (stone biome)
+
+
+# ------------------------------------------------- ember boss 32x32 x4 (Magma Tyrant)
+def gen_boss_ember():
+    W = H = 32
+    img = new_sheet(4, W, H)
+    px = img.load()
+    ROCK = (74, 44, 40, 255)
+    ROCK_D = (52, 30, 28, 255)
+    LAVA = (255, 140, 40, 255)
+    LAVA_B = (255, 210, 90, 255)
+
+    def draw(fi, bob, rage):
+        ox = fi * W
+        top = 8 + bob
+        # horns
+        for i in range(5):
+            px[ox + 6 - i // 2, top - 1 - i] = ROCK_D
+            px[ox + 25 + i // 2, top - 1 - i] = ROCK_D
+        # bulky body
+        for y in range(top, 29):
+            wdt = 20 if y < top + 8 else 24
+            left = ox + (W - wdt) // 2
+            for x in range(wdt):
+                col = ROCK if (x + y) % 2 else ROCK_D
+                # lava cracks
+                if (x * 3 + y * 5) % 11 == 0:
+                    col = LAVA_B if rage else LAVA
+                px[left + x, y] = col
+        # burning eyes
+        ey = top + 5
+        for e in (ox + 10, ox + 19):
+            px[e, ey] = LAVA_B
+            px[e + 1, ey] = LAVA_B
+            px[e, ey + 1] = LAVA if not rage else LAVA_B
+            px[e + 1, ey + 1] = LAVA if not rage else LAVA_B
+        # molten mouth
+        for x in range(ox + 12, ox + 20):
+            px[x, top + 11] = LAVA if rage else BLACK
+        # fists
+        for fy in range(3):
+            for fx in range(3):
+                px[ox + 3 + fx, top + 12 + fy] = ROCK_D
+                px[ox + 26 + fx, top + 12 + fy] = ROCK_D
+        outline(px, W, H, ox, 0)
+
+    draw(0, 0, False)
+    draw(1, 1, False)
+    draw(2, 0, True)      # attacking: cracks + mouth flare
+    # death frame: crumbled smoking rubble
+    ox = 3 * W
+    for y in range(22, 30):
+        for x in range(4, 28):
+            if (x * 3 + y) % 4 != 0:
+                px[ox + x, y] = ROCK_D if (x + y) % 2 else ROCK
+    for x, y in [(9, 24), (16, 23), (23, 25), (13, 27)]:
+        px[ox + x, y] = LAVA
+    outline(px, W, H, ox, 0)
+    img.save(os.path.join(OUT, "boss_ember.png"))
+
+
+# ------------------------------------------------- frost boss 32x32 x4 (Frozen Warden)
+def gen_boss_frost():
+    W = H = 32
+    img = new_sheet(4, W, H)
+    px = img.load()
+    ICE = (150, 200, 240, 255)
+    ICE_D = (95, 140, 195, 255)
+    ICE_L = (215, 240, 255, 255)
+    CORE = (60, 90, 150, 255)
+
+    def draw(fi, bob, glow):
+        ox = fi * W
+        top = 6 + bob
+        # crown of crystal spikes
+        for sx, h in ((9, 4), (13, 6), (17, 6), (21, 4)):
+            for i in range(h):
+                px[ox + sx + (0 if i < h - 1 else 0), top + 2 - i] = ICE_L if glow else ICE
+        # tall angular body (tapers to the base)
+        for y in range(top + 2, 30):
+            t = (y - top) / 26.0
+            wdt = int(18 - 6 * abs(t - 0.35) * 2)
+            left = ox + (W - wdt) // 2
+            for x in range(wdt):
+                col = ICE if (x + y) % 2 else ICE_D
+                # inner dark core column
+                if abs((left + x) - (ox + W // 2)) < 3 and y > top + 8:
+                    col = CORE
+                px[left + x, y] = col
+        # facets
+        for x, y in [(11, top + 7), (20, top + 9), (14, top + 15), (18, top + 20)]:
+            px[ox + x, y] = ICE_L
+        # glowing eyes
+        ey = top + 6
+        for e in (ox + 12, ox + 18):
+            px[e, ey] = ICE_L
+            px[e + 1, ey] = ICE_L if glow else ICE
+            px[e, ey + 1] = (140, 255, 255, 255) if glow else CORE
+        outline(px, W, H, ox, 0)
+
+    draw(0, 0, False)
+    draw(1, 1, False)
+    draw(2, 0, True)      # attacking: bright crown + eyes
+    # death frame: shattered shards on the ground
+    ox = 3 * W
+    for x, y, s in [(7, 26, 2), (12, 24, 3), (18, 27, 2), (23, 25, 3), (15, 28, 2), (26, 28, 1)]:
+        for dy in range(s):
+            for dx in range(s - dy):
+                px[ox + x + dx, y - dy] = ICE if (dx + dy) % 2 else ICE_L
+    outline(px, W, H, ox, 0)
+    img.save(os.path.join(OUT, "boss_frost.png"))
 
 
 # ---------------------------------------------------------------- portal 24x24 x4
@@ -767,6 +879,39 @@ def gen_torch():
     img.save(os.path.join(OUT, "torch.png"))
 
 
+# ---------------------------------------------------------------- gem 8x8 x4
+def gen_gem():
+    # Persistent-currency crystal: cyan diamond with a magenta core, 4 sparkle frames.
+    W = H = 8
+    img = new_sheet(4, W, H)
+    px = img.load()
+    CY = (90, 230, 240, 255)
+    CY_D = (40, 150, 190, 255)
+    MG = (220, 120, 240, 255)
+
+    def gem(fi, spark):
+        ox = fi * W
+        blit(px, ox + 1, 1, [
+            "..cc..",
+            ".cCCc.",
+            "cCmmCc",
+            ".cCCc.",
+            "..cc..",
+            "...c..",
+        ], {"c": CY_D, "C": CY, "m": MG})
+        if spark == 1:
+            px[ox + 2, 2] = WHITE
+        elif spark == 2:
+            px[ox + 5, 3] = WHITE
+        elif spark == 3:
+            px[ox + 3, 5] = WHITE
+        outline(px, W, H, ox, 0)
+
+    for i in range(4):
+        gem(i, i)
+    img.save(os.path.join(OUT, "gem.png"))
+
+
 # ---------------------------------------------------------------- crosshair 15x15
 def gen_crosshair():
     # Open-center crosshair cursor: 4 ticks + corner dots, white with dark outline.
@@ -816,10 +961,13 @@ def main():
     gen_spark()
     gen_glow()
     gen_boss()
+    gen_boss_ember()
+    gen_boss_frost()
     gen_portal()
     gen_chest()
     gen_weapon_icon()
     gen_torch()
+    gen_gem()
     gen_crosshair()
     gen_icon()
     print("Generated art in", OUT)

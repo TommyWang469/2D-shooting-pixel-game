@@ -150,6 +150,18 @@ def build_sfx():
                   tone(note("G", 3), note("G", 3), 0.45, "tri", 0.32)))
     # click (UI)
     write_wav(os.path.join(SFX, "click.wav"), tone(900, 600, 0.05, "square", 0.25))
+    # gem: crystalline double ding (higher + brighter than coin)
+    write_wav(os.path.join(SFX, "gem.wav"),
+              seq(tone(1568, 1568, 0.05, "sine", 0.3),
+                  mix(tone(2093, 2093, 0.1, "sine", 0.3),
+                      tone(2637, 2637, 0.1, "sine", 0.15))))
+    # unlock: rising fanfare for heroes/upgrades
+    write_wav(os.path.join(SFX, "unlock.wav"),
+              seq(tone(note("C", 5), note("C", 5), 0.07, "square", 0.3),
+                  tone(note("F", 5), note("F", 5), 0.07, "square", 0.3),
+                  tone(note("A", 5), note("A", 5), 0.07, "square", 0.3),
+                  mix(tone(note("C", 6), note("C", 6), 0.22, "square", 0.28),
+                      tone(note("F", 5), note("F", 5), 0.22, "tri", 0.2))))
 
 
 def build_track(fname, bpm, roots, bass_kind, bass_vol, arp_kind, arp_vol, arp_pat,
@@ -190,6 +202,9 @@ def build_music():
     build_track("music_frost.wav", 84, ["E", "C", "G", "D"],
                 "tri", 0.14, "sine", 0.11, [0, None, 7, None, 12, None, 3, None],
                 arp_octave=5)
+    # Boss fight — fast, driving, tense (D minor, restless arp).
+    build_track("music_boss.wav", 150, ["D", "D", "A#", "C"],
+                "saw", 0.15, "square", 0.11, [0, 6, 0, 7, 0, 6, 3, 1])
     # Keep legacy music.wav (title fallback) in sync with the stone track.
     build_track("music.wav", 108, ["A", "F", "C", "G"],
                 "tri", 0.16, "square", 0.09, [0, 3, 7, 12, 7, 3, 7, 3])

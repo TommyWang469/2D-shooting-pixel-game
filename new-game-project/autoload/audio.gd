@@ -22,6 +22,7 @@ const MUSIC_PATHS := {
 	"stone": "res://assets/music_stone.wav",
 	"ember": "res://assets/music_ember.wav",
 	"frost": "res://assets/music_frost.wav",
+	"boss": "res://assets/music_boss.wav",
 }
 
 const POOL_SIZE := 12
@@ -40,6 +41,10 @@ func _ready() -> void:
 	_ensure_bus("SFX")
 	for key in SFX_PATHS:
 		var s = load(SFX_PATHS[key])
+		if s:
+			_streams[key] = s
+	for key in ["gem", "unlock"]:
+		var s = load("res://assets/sfx/%s.wav" % key)
 		if s:
 			_streams[key] = s
 	for key in MUSIC_PATHS:

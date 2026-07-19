@@ -27,6 +27,9 @@ func _ready() -> void:
 		"coin":
 			sprite.texture = load("res://assets/coin.png")
 			sprite.hframes = 4
+		"gem":
+			sprite.texture = load("res://assets/gem.png")
+			sprite.hframes = 4
 		"heart":
 			sprite.texture = load("res://assets/heart.png")
 
@@ -36,7 +39,7 @@ func _process(delta: float) -> void:
 		_base_y = position.y   # capture after spawn code has set our position
 		_base_set = true
 	_bob += delta * 4.0
-	if kind == "coin":
+	if kind == "coin" or kind == "gem":
 		_spin += delta
 		if _spin >= 0.12:
 			_spin = 0.0
@@ -44,7 +47,7 @@ func _process(delta: float) -> void:
 			sprite.frame = _frame
 	if _player and is_instance_valid(_player):
 		var d := global_position.distance_to(_player.global_position)
-		if d < MAGNET_RADIUS:
+		if d < MAGNET_RADIUS + 12.0 * Save.upgrade_level("magnet"):
 			global_position = global_position.move_toward(_player.global_position, MAGNET_SPEED * delta)
 			return
 	position.y = _base_y + sin(_bob) * 1.5
@@ -58,6 +61,11 @@ func _on_body_entered(body: Node) -> void:
 			GameManager.add_coins(value)
 			Audio.play("coin", 0.14, -7.0)
 			_float("+%d" % value, Color(1.0, 0.85, 0.35))
+			queue_free()
+		"gem":
+			GameManager.add_gems(value)
+			Audio.play("gem", 0.08, -4.0)
+			_float("+%d GEM" % value, Color(0.5, 0.95, 1.0))
 			queue_free()
 		"heart":
 			if body.has_method("heal"):
