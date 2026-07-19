@@ -32,7 +32,11 @@ func set_weapon(w: Weapon) -> void:
 func _refresh() -> void:
 	if weapon and name_label:
 		name_label.text = weapon.display_name
-		icon.modulate = weapon.bullet_color
+		if weapon.icon != "":
+			icon.texture = load(weapon.icon)   # unique pre-colored art
+			icon.modulate = Color.WHITE
+		else:
+			icon.modulate = weapon.bullet_color
 
 
 func _process(delta: float) -> void:

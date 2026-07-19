@@ -879,6 +879,498 @@ def gen_torch():
     img.save(os.path.join(OUT, "torch.png"))
 
 
+# ================================================================ biome tilesets
+def _jitter(c, amt, rng):
+    return tuple(max(0, min(255, v + rng.randint(-amt, amt))) for v in c[:3]) + (255,)
+
+
+def gen_biome_tiles():
+    """Per-biome floor (2 variants) + wall tiles. Themes now tint near-white —
+    the art itself carries the biome color."""
+    import random as _r
+
+    def save(img, name):
+        img.save(os.path.join(OUT, name))
+
+    # ---- STONE: cracked flagstones + brick wall ----
+    for variant, seed in (("", 11), ("_b", 47)):
+        rng = _r.Random(seed)
+        img = Image.new("RGBA", (16, 16), (0, 0, 0, 255))
+        px = img.load()
+        base = (150, 148, 168)
+        mortar = (98, 95, 118, 255)
+        for sy in range(2):
+            for sx in range(2):
+                shade = _jitter(base, 10, rng)
+                for y in range(sy * 8, sy * 8 + 8):
+                    for x in range(sx * 8, sx * 8 + 8):
+                        px[x, y] = shade
+        for i in range(16):
+            px[i, 7] = mortar
+            px[i, 15] = mortar
+            px[7, i] = mortar
+            px[15, i] = mortar
+        for i in range(rng.randint(2, 4)):     # cracks
+            cx, cy = rng.randint(1, 14), rng.randint(1, 14)
+            for step in range(rng.randint(2, 4)):
+                px[cx, cy] = mortar
+                cx = max(0, min(15, cx + rng.choice([-1, 0, 1])))
+                cy = max(0, min(15, cy + 1))
+        if variant == "_b":                     # moss creeps in on the B tile
+            for i in range(5):
+                px[rng.randint(0, 15), rng.randint(0, 15)] = (96, 138, 92, 255)
+        save(img, f"floor_stone{variant}.png")
+
+    rng = _r.Random(5)
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 255))
+    px = img.load()
+    for row in range(4):                        # brick courses, offset rows
+        y0 = row * 4
+        off = 0 if row % 2 == 0 else 4
+        for x in range(16):
+            for y in range(y0, y0 + 4):
+                px[x, y] = _jitter((122, 118, 148), 8, rng)
+        for y in range(y0, y0 + 4):
+            for bx in range(off, 17, 8):
+                if bx < 16:
+                    px[bx, y] = (72, 68, 92, 255)
+        for x in range(16):
+            px[x, y0] = (150, 146, 176, 255)    # top edge highlight
+            px[x, y0 + 3] = (72, 68, 92, 255)
+    save(img, "wall_stone.png")
+
+    # ---- EMBER: basalt with glowing lava veins ----
+    for variant, seed, veins in (("", 23, 3), ("_b", 71, 1)):
+        rng = _r.Random(seed)
+        img = Image.new("RGBA", (16, 16), (0, 0, 0, 255))
+        px = img.load()
+        for y in range(16):
+            for x in range(16):
+                px[x, y] = _jitter((74, 54, 52), 7, rng)
+        for i in range(veins):                  # random-walk lava veins
+            cx, cy = rng.randint(2, 13), rng.randint(2, 13)
+            for step in range(rng.randint(4, 7)):
+                px[cx, cy] = (255, 150, 45, 255)
+                if rng.random() < 0.4:
+                    px[max(0, cx - 1), cy] = (200, 90, 35, 255)
+                cx = max(0, min(15, cx + rng.choice([-1, 0, 1])))
+                cy = max(0, min(15, cy + rng.choice([-1, 0, 1])))
+        if variant == "_b":
+            for i in range(6):                  # cooling ember specks
+                px[rng.randint(0, 15), rng.randint(0, 15)] = (170, 80, 40, 255)
+        save(img, f"floor_ember{variant}.png")
+
+    rng = _r.Random(29)
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 255))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = _jitter((62, 44, 46), 8, rng)
+    for by in range(0, 16, 5):                  # rough rock strata
+        for x in range(16):
+            px[x, by] = (40, 28, 32, 255)
+    for i in range(3):                          # faint magma glow in the cracks
+        x = rng.randint(1, 14)
+        y = rng.choice([4, 9, 14])
+        px[x, y] = (200, 95, 40, 255)
+    save(img, "wall_ember.png")
+
+    # ---- FROST: faceted ice ----
+    for variant, seed in (("", 37), ("_b", 83)):
+        rng = _r.Random(seed)
+        img = Image.new("RGBA", (16, 16), (0, 0, 0, 255))
+        px = img.load()
+        for y in range(16):
+            for x in range(16):
+                px[x, y] = _jitter((172, 206, 236), 8, rng)
+        for i in range(rng.randint(2, 3)):      # diagonal light streaks
+            sx, sy = rng.randint(0, 10), rng.randint(0, 10)
+            for step in range(rng.randint(3, 6)):
+                if sx + step < 16 and sy + step < 16:
+                    px[sx + step, sy + step] = (218, 240, 255, 255)
+        for i in range(4):                      # trapped bubbles
+            px[rng.randint(1, 14), rng.randint(1, 14)] = (240, 250, 255, 255)
+        for i in range(2):                      # deep cracks
+            cx = rng.randint(2, 13)
+            for cy in range(rng.randint(2, 5), rng.randint(9, 14)):
+                px[cx, cy] = (120, 160, 208, 255)
+                cx = max(0, min(15, cx + rng.choice([-1, 0, 1])))
+        save(img, f"floor_frost{variant}.png")
+
+    rng = _r.Random(41)
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 255))
+    px = img.load()
+    for by in range(2):                         # big ice blocks with facet shine
+        for bx in range(2):
+            shade = _jitter((128, 168, 212), 10, rng)
+            for y in range(by * 8, by * 8 + 8):
+                for x in range(bx * 8, bx * 8 + 8):
+                    px[x, y] = shade
+            px[bx * 8 + 1, by * 8 + 1] = (210, 236, 255, 255)
+            px[bx * 8 + 2, by * 8 + 1] = (210, 236, 255, 255)
+    for i in range(16):
+        px[i, 7] = (86, 120, 168, 255)
+        px[i, 15] = (86, 120, 168, 255)
+        px[7, i] = (86, 120, 168, 255)
+        px[15, i] = (86, 120, 168, 255)
+    save(img, "wall_frost.png")
+
+
+# ================================================================ decor decals
+def gen_decor():
+    """3 non-colliding floor decals per biome, scattered by the room generator."""
+    def canvas(w=12, h=12):
+        img = Image.new("RGBA", (w, h), T)
+        return img, img.load()
+
+    def save(img, name):
+        img.save(os.path.join(OUT, name))
+
+    # stone: skull, moss, rubble
+    img, px = canvas(10, 9)
+    blit(px, 1, 1, [
+        ".wwwww.",
+        "wwwwwww",
+        "wKwwwKw",
+        "wwwWwww",
+        ".wwwww.",
+        ".w.w.w.",
+    ], {"w": (225, 220, 205, 255), "W": (190, 185, 170, 255), "K": (40, 35, 45, 255)})
+    outline(px, 10, 9, 0, 0)
+    save(img, "decor_stone_1.png")
+
+    img, px = canvas(12, 8)
+    blit(px, 0, 1, [
+        "..mmmm....",
+        ".mmMMmmm..",
+        "mmMMMMmmm.",
+        ".mmmMMmm..",
+        "...mmm....",
+    ], {"m": (78, 118, 76, 200), "M": (104, 150, 96, 220)})
+    save(img, "decor_stone_2.png")
+
+    img, px = canvas(12, 7)
+    blit(px, 1, 1, [
+        "..g...G...",
+        ".gGg.GGg..",
+        "gGGGgGGGg.",
+    ], {"g": (105, 100, 122, 255), "G": (140, 136, 158, 255)})
+    outline(px, 12, 7, 0, 0)
+    save(img, "decor_stone_3.png")
+
+    # ember: glowing fissure, cinder pile, obsidian shard
+    img, px = canvas(14, 6)
+    blit(px, 0, 1, [
+        ".kkOok......",
+        "kkOOOokkk...",
+        "..koOOOOkkk.",
+        "....kkoOOk..",
+    ], {"k": (35, 22, 24, 255), "O": (255, 150, 45, 255), "o": (200, 90, 35, 255)})
+    save(img, "decor_ember_1.png")
+
+    img, px = canvas(10, 7)
+    blit(px, 1, 1, [
+        "...kk...",
+        "..kkkO..",
+        ".kkkkkk.",
+        "kOkkkkkO",
+    ], {"k": (48, 34, 34, 255), "O": (235, 120, 45, 255)})
+    outline(px, 10, 7, 0, 0)
+    save(img, "decor_ember_2.png")
+
+    img, px = canvas(8, 9)
+    blit(px, 1, 1, [
+        "...p.",
+        "..pP.",
+        ".pPP.",
+        "pPPPp",
+        "ppppp",
+    ], {"p": (52, 38, 66, 255), "P": (98, 74, 122, 255)})
+    outline(px, 8, 9, 0, 0)
+    save(img, "decor_ember_3.png")
+
+    # frost: crystal cluster, snow patch, frozen tuft
+    img, px = canvas(12, 10)
+    blit(px, 1, 1, [
+        "...c......",
+        "..cC...c..",
+        "..cC..cC..",
+        ".ccCc.cC..",
+        ".cCCc.ccc.",
+        "ccccc.....",
+    ], {"c": (110, 180, 225, 255), "C": (200, 240, 255, 255)})
+    outline(px, 12, 10, 0, 0)
+    save(img, "decor_frost_1.png")
+
+    img, px = canvas(12, 7)
+    blit(px, 0, 1, [
+        "..wwww....",
+        ".wwWWwww..",
+        "wwWWWWwww.",
+        ".wwwwww...",
+    ], {"w": (225, 240, 250, 190), "W": (245, 252, 255, 220)})
+    save(img, "decor_frost_2.png")
+
+    img, px = canvas(10, 8)
+    blit(px, 1, 1, [
+        "c..c..c.",
+        "C.cC.cC.",
+        "C.cC.cC.",
+        "cccccccc",
+    ], {"c": (130, 190, 230, 255), "C": (190, 230, 250, 255)})
+    outline(px, 10, 8, 0, 0)
+    save(img, "decor_frost_3.png")
+
+
+# ================================================================ bullet sprites
+def gen_bullet_sprites():
+    """Distinct projectile shapes (drawn pointing +X; the engine rotates them)."""
+    def canvas(w, h):
+        img = Image.new("RGBA", (w, h), T)
+        return img, img.load()
+
+    def save(img, name):
+        img.save(os.path.join(OUT, name))
+
+    # crossbow bolt
+    img, px = canvas(12, 6)
+    blit(px, 0, 1, [
+        "ff.wwwwwwss.",
+        "fffwwwwwwsss",
+        "ff.wwwwwwss.",
+    ], {"w": (150, 108, 62, 255), "s": (210, 214, 225, 255), "f": (200, 60, 60, 255)})
+    outline(px, 12, 6, 0, 0)
+    save(img, "shot_bolt.png")
+
+    # flame blob
+    img, px = canvas(10, 10)
+    blit(px, 0, 1, [
+        "...oo.....",
+        ".ooOOoo...",
+        "ooOWWOoo..",
+        ".ooOOoo...",
+        "...oo.....",
+    ], {"o": (230, 110, 30, 255), "O": (255, 170, 50, 255), "W": (255, 240, 170, 255)})
+    save(img, "shot_flame.png")
+
+    # ice shard
+    img, px = canvas(12, 6)
+    blit(px, 0, 1, [
+        "..ccCCcc....",
+        "cCCWWWWCCc..",
+        "..ccCCcc....",
+    ], {"c": (110, 180, 225, 255), "C": (170, 220, 250, 255), "W": (235, 250, 255, 255)})
+    outline(px, 12, 6, 0, 0)
+    save(img, "shot_shard.png")
+
+    # railgun beam capsule
+    img, px = canvas(16, 6)
+    blit(px, 0, 1, [
+        ".cWWWWWWWWWWWWc.",
+        "cWWwwwwwwwwwwWWc",
+        ".cWWWWWWWWWWWWc.",
+    ], {"c": (110, 200, 240, 255), "W": (200, 245, 255, 255), "w": (255, 255, 255, 255)})
+    save(img, "shot_beam.png")
+
+    # wand star
+    img, px = canvas(10, 10)
+    blit(px, 0, 0, [
+        "....m.....",
+        "....m.....",
+        "..mMWMm...",
+        "...MWM....",
+        "..mMWMm...",
+        "....m.....",
+        "....m.....",
+    ], {"m": (220, 120, 240, 255), "M": (245, 180, 255, 255), "W": (255, 255, 255, 255)})
+    save(img, "shot_star.png")
+
+    # ricochet disc
+    img, px = canvas(9, 9)
+    blit(px, 0, 0, [
+        "..ggg....",
+        ".gGGGg...",
+        "gGwwwGg..",
+        "gGwWwGg..",
+        "gGwwwGg..",
+        ".gGGGg...",
+        "..ggg....",
+    ], {"g": (60, 140, 55, 255), "G": (110, 210, 90, 255), "w": (190, 250, 170, 255),
+		"W": (240, 255, 230, 255)})
+    save(img, "shot_disc.png")
+
+
+# ================================================================ weapon icons
+def gen_weapon_icons():
+    """One little sprite per weapon so ground drops and shops read instantly."""
+    M = (176, 182, 200, 255)    # light metal
+    D = (96, 102, 122, 255)     # dark metal
+    W = (152, 108, 64, 255)     # wood
+
+    ICONS = {
+        "blaster": ((255, 228, 100, 255), [
+            "............",
+            ".mmmmmm.....",
+            "mmaammmmmm..",
+            "dddmmdd.....",
+            "..dmm.......",
+            "..dd........",
+        ]),
+        "smg": ((128, 230, 255, 255), [
+            "............",
+            "mmmmmmmmaa..",
+            "mmmmmmmmmm..",
+            "ddmmdd......",
+            "..mm.dd.....",
+            "..mm........",
+        ]),
+        "triple": ((150, 255, 150, 255), [
+            "..mmmmmmma..",
+            ".mmmmmmmma..",
+            "..mmmmmmma..",
+            "dddmmdd.....",
+            "..dmm.......",
+            "..dd........",
+        ]),
+        "shotgun": ((255, 178, 90, 255), [
+            "............",
+            "wwmmmmmmmmaa",
+            "wwwmmmmmmmaa",
+            "..wwwdd.....",
+            "....ww......",
+            "............",
+        ]),
+        "piercer": ((205, 153, 255, 255), [
+            "............",
+            "............",
+            "mmaammmmmmmm",
+            "dddmm.......",
+            "..dmm.......",
+            "..dd........",
+        ]),
+        "cannon": ((255, 128, 102, 255), [
+            ".mmmmmmmm...",
+            "mmmmmmmmmma.",
+            "mmddddmmmma.",
+            "mmmmmmmmmma.",
+            ".mmmmmmmm...",
+            "..dd..dd....",
+        ]),
+        "wand": ((255, 140, 230, 255), [
+            "..........aa",
+            ".........aAa",
+            "......www.aa",
+            "....www.....",
+            "..www.......",
+            "www.........",
+        ]),
+        "railgun": ((190, 242, 255, 255), [
+            "............",
+            "mmaammaamma.",
+            "mmmmmmmmmmaA",
+            "dddmmdd.....",
+            "..dmm.......",
+            "..dd........",
+        ]),
+        "crossbow": ((218, 178, 115, 255), [
+            "....a.......",
+            ".mm.a.mm....",
+            "..mmammm....",
+            "wwwwAwwwww..",
+            "..mmammm....",
+            ".mm.a.mm....",
+        ]),
+        "flamer": ((255, 152, 50, 255), [
+            "............",
+            "ddmmmmmmaA..",
+            "ddmmmmmmaa..",
+            "ddddddd.....",
+            "..dmm.......",
+            "..dd........",
+        ]),
+        "ricochet": ((140, 255, 115, 255), [
+            "............",
+            ".mmmmmmma...",
+            "mmaAammmma..",
+            "mmaaammm....",
+            "..dmm.......",
+            "..dd........",
+        ]),
+        "frostbow": ((155, 230, 255, 255), [
+            "...mm.......",
+            ".mm..a......",
+            "mm...a...aA.",
+            "mm...a......",
+            ".mm..a......",
+            "...mm.......",
+        ]),
+        "minigun": ((255, 205, 130, 255), [
+            ".mamamama...",
+            "mmmmmmmmmm..",
+            ".mamamama...",
+            "ddddddd.....",
+            "..dmm.dd....",
+            "..dd........",
+        ]),
+    }
+    for wid, (accent, grid) in ICONS.items():
+        img = Image.new("RGBA", (13, 8), T)
+        px = img.load()
+        bright = tuple(min(255, c + 40) for c in accent[:3]) + (255,)
+        blit(px, 0, 1, grid, {"m": M, "d": D, "w": W, "a": accent, "A": bright})
+        outline(px, 13, 8, 0, 0)
+        img.save(os.path.join(OUT, f"wpn_{wid}.png"))
+
+
+# ================================================================ title backdrop
+def gen_title_bg():
+    """480x270 dithered night gradient over a brick rampart with torch glows."""
+    import random as _r
+    rng = _r.Random(9)
+    Wd, Hd = 480, 270
+    img = Image.new("RGBA", (Wd, Hd), (0, 0, 0, 255))
+    px = img.load()
+    top = (10, 8, 18)
+    bot = (44, 30, 66)
+    bayer = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
+    for y in range(Hd):
+        t = y / Hd
+        for x in range(Wd):
+            d = (bayer[y % 4][x % 4] / 15.0 - 0.5) * 0.10   # ordered dither
+            tt = max(0.0, min(1.0, t + d))
+            px[x, y] = (int(top[0] + (bot[0] - top[0]) * tt),
+                        int(top[1] + (bot[1] - top[1]) * tt),
+                        int(top[2] + (bot[2] - top[2]) * tt), 255)
+    for i in range(90):                     # stars
+        sx, sy = rng.randint(0, Wd - 1), rng.randint(0, 150)
+        v = rng.randint(90, 200)
+        px[sx, sy] = (v, v, min(255, v + 30), 255)
+    wall_y = 208                            # brick rampart silhouette
+    for y in range(wall_y, Hd):
+        for x in range(Wd):
+            base = 30 + ((x * 7 + y * 13) % 5)
+            px[x, y] = (base - 6, base - 10, base + 6, 255)
+    for row_y in range(wall_y, Hd, 12):     # mortar lines
+        for x in range(Wd):
+            px[x, row_y] = (16, 12, 26, 255)
+        off = 0 if (row_y // 12) % 2 == 0 else 12
+        for bx in range(off, Wd, 24):
+            for y in range(row_y, min(Hd, row_y + 12)):
+                px[bx, y] = (16, 12, 26, 255)
+    for cx in [120, 360]:                   # torch glow pools on the rampart
+        for y in range(wall_y - 26, min(Hd, wall_y + 30)):
+            for x in range(max(0, cx - 40), min(Wd, cx + 40)):
+                dx, dy = x - cx, y - wall_y
+                d2 = dx * dx + dy * dy * 2
+                if d2 < 1500:
+                    f = 1.0 - d2 / 1500.0
+                    r, g, b, _a = px[x, y]
+                    px[x, y] = (min(255, int(r + 120 * f)),
+                                min(255, int(g + 70 * f)),
+                                min(255, int(b + 20 * f)), 255)
+    img.save(os.path.join(OUT, "title_bg.png"))
+
+
 # ---------------------------------------------------------------- gem 8x8 x4
 def gen_gem():
     # Persistent-currency crystal: cyan diamond with a magenta core, 4 sparkle frames.
@@ -968,6 +1460,11 @@ def main():
     gen_weapon_icon()
     gen_torch()
     gen_gem()
+    gen_biome_tiles()
+    gen_decor()
+    gen_bullet_sprites()
+    gen_weapon_icons()
+    gen_title_bg()
     gen_crosshair()
     gen_icon()
     print("Generated art in", OUT)

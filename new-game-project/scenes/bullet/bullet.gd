@@ -15,6 +15,7 @@ var slow := 0.0                   ## enemy speed factor applied on hit (0 = none
 
 var _color := Color.WHITE
 var _scale := 1.0
+var _tex := ""                    ## custom sprite path (pre-colored art)
 var _hits := 0
 
 
@@ -30,12 +31,16 @@ func setup(dir: Vector2, speed: float, dmg: int, opts := {}) -> void:
 	homing = opts.get("homing", 0.0)
 	bounce = opts.get("bounce", 0)
 	slow = opts.get("slow", 0.0)
+	_tex = opts.get("tex", "")
 
 
 func _ready() -> void:
 	add_to_group("transient")
-	$Sprite2D.texture = load("res://assets/bullet.png")
-	$Sprite2D.modulate = _color
+	if _tex != "":
+		$Sprite2D.texture = load(_tex)   # pre-colored custom projectile art
+	else:
+		$Sprite2D.texture = load("res://assets/bullet.png")
+		$Sprite2D.modulate = _color
 	scale = Vector2(_scale, _scale)
 	body_entered.connect(_on_body_entered)
 

@@ -16,9 +16,12 @@ var floor_tiles: Array[Vector2i] = []
 var open_tiles: Array[Vector2i] = []     # floor whose 4 neighbours are floor too
 
 var floor_tex: Texture2D
+var floor_tex_b: Texture2D               ## hash-picked variant tile
 var wall_tex: Texture2D
 var _wall_body: StaticBody2D
 var _torch_root: Node2D
+var _decor_root: Node2D
+var _ambient: CPUParticles2D
 
 @onready var player: Node2D = $Player
 @onready var hud: CanvasLayer = $HUD
@@ -27,8 +30,6 @@ var _torch_root: Node2D
 
 func _ready() -> void:
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	floor_tex = load("res://assets/floor.png")
-	wall_tex = load("res://assets/wall.png")
 	Input.set_custom_mouse_cursor(load("res://assets/crosshair.png"),
 			Input.CURSOR_ARROW, Vector2(7, 7))
 	GameManager.reset_game()
@@ -42,10 +43,16 @@ func _ready() -> void:
 func _regen_room() -> void:
 	theme = DungeonTheme.for_chapter(GameManager.chapter)
 	canvas_modulate.color = theme.ambient
+	var tiles: String = theme.get("tiles", "stone")
+	floor_tex = load("res://assets/floor_%s.png" % tiles)
+	floor_tex_b = load("res://assets/floor_%s_b.png" % tiles)
+	wall_tex = load("res://assets/wall_%s.png" % tiles)
 	Audio.play_music("boss" if GameManager.is_boss_room() else theme.get("music", "stone"))
 	_gen_grid(GameManager.is_boss_room())
 	_build_collision()
 	_place_torches()
+	_place_decor(tiles)
+	_make_ambient(tiles)
 	queue_redraw()
 
 
@@ -300,7 +307,9 @@ func _draw() -> void:
 		for x in GW:
 			var r := Rect2(x * TILE, y * TILE, TILE, TILE)
 			if grid[y][x]:
-				draw_texture_rect(floor_tex, r, false, fcol)
+				# deterministic sprinkle of the B variant breaks up repetition
+				var tex := floor_tex_b if (x * 31 + y * 17) % 7 == 0 else floor_tex
+				draw_texture_rect(tex, r, false, fcol)
 			elif _is_solid_wall(x, y):
 				draw_texture_rect(wall_tex, r, false, wcol)
 
@@ -347,6 +356,72 @@ func _make_torch(pos: Vector2) -> void:
 	flame.color = Color(1.0, 0.6, 0.22)
 	flame.position = Vector2(0, -6)
 	root.add_child(flame)
+
+
+## Scatter a few biome decals (bones, fissures, crystals…) on open floor tiles.
+## Inserted before the Player in the tree so everything walks over them.
+func _place_decor(tiles: String) -> void:
+	if is_instance_valid(_decor_root):
+		_decor_root.queue_free()
+	_decor_root = Node2D.new()
+	add_child(_decor_root)
+	move_child(_decor_root, 1)   # after CanvasModulate, before Player
+	var texs: Array = []
+	for i in [1, 2, 3]:
+		texs.append(load("res://assets/decor_%s_%d.png" % [tiles, i]))
+	for i in randi_range(7, 13):
+		var s := Sprite2D.new()
+		s.texture = texs[randi() % texs.size()]
+		s.position = tile_to_world(open_tiles[randi() % open_tiles.size()]) \
+				+ Vector2(randf_range(-3, 3), randf_range(-3, 3))
+		if randf() < 0.5:
+			s.flip_h = true
+		_decor_root.add_child(s)
+
+
+## One ambient particle field per biome: dust motes / rising embers / snowfall.
+func _make_ambient(tiles: String) -> void:
+	if is_instance_valid(_ambient):
+		_ambient.queue_free()
+	_ambient = CPUParticles2D.new()
+	_ambient.texture = load("res://assets/spark.png")
+	_ambient.position = ROOM * 0.5
+	_ambient.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	_ambient.emission_rect_extents = ROOM * 0.5
+	_ambient.spread = 180.0
+	_ambient.z_index = 1
+	match tiles:
+		"ember":
+			_ambient.amount = 18
+			_ambient.lifetime = 3.0
+			_ambient.direction = Vector2(0, -1)
+			_ambient.gravity = Vector2(0, -14)
+			_ambient.initial_velocity_min = 4.0
+			_ambient.initial_velocity_max = 14.0
+			_ambient.color = Color(1.0, 0.55, 0.2, 0.55)
+			_ambient.scale_amount_min = 0.5
+			_ambient.scale_amount_max = 1.0
+		"frost":
+			_ambient.amount = 26
+			_ambient.lifetime = 5.0
+			_ambient.direction = Vector2(0.3, 1)
+			_ambient.gravity = Vector2(4, 10)
+			_ambient.initial_velocity_min = 3.0
+			_ambient.initial_velocity_max = 9.0
+			_ambient.color = Color(0.95, 0.98, 1.0, 0.6)
+			_ambient.scale_amount_min = 0.4
+			_ambient.scale_amount_max = 0.9
+		_:
+			_ambient.amount = 10
+			_ambient.lifetime = 4.5
+			_ambient.direction = Vector2(0, -1)
+			_ambient.gravity = Vector2(0, -3)
+			_ambient.initial_velocity_min = 1.0
+			_ambient.initial_velocity_max = 4.0
+			_ambient.color = Color(0.8, 0.8, 0.9, 0.28)
+			_ambient.scale_amount_min = 0.4
+			_ambient.scale_amount_max = 0.8
+	add_child(_ambient)
 
 
 # ================================================================ spawn helpers

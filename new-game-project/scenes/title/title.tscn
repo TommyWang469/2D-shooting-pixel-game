@@ -14,8 +14,21 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color(0.09, 0.08, 0.13, 1)
 
+[node name="Backdrop" type="TextureRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+stretch_mode = 0
+
 [node name="Glow" type="Sprite2D" parent="."]
 position = Vector2(240, 135)
+
+[node name="HeroL" type="Sprite2D" parent="."]
+position = Vector2(175, 158)
+scale = Vector2(2, 2)
+
+[node name="HeroR" type="Sprite2D" parent="."]
+position = Vector2(305, 158)
+scale = Vector2(2, 2)
 
 [node name="Hero" type="Sprite2D" parent="."]
 position = Vector2(240, 150)

@@ -127,6 +127,20 @@ func make_elite() -> void:
 	base_tint = base_tint.lerp(Color(1.0, 0.85, 0.3), 0.55)
 	sprite.modulate = base_tint
 	body_color = Color(1.0, 0.85, 0.3)
+	# pulsing golden aura so elites read from across the room
+	var g := Sprite2D.new()
+	g.texture = load("res://assets/glow.png")
+	g.modulate = Color(1.0, 0.82, 0.3, 0.55)
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	g.material = mat
+	add_child(g)
+	move_child(g, 0)   # under the body sprite, above the floor
+	var tw := g.create_tween().set_loops()
+	tw.tween_property(g, "scale", Vector2(1.1, 1.1), 0.5) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(g, "scale", Vector2(0.8, 0.8), 0.5) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 ## Frost Bow chill: cap the enemy's movement for a moment (stacks refresh, not add).

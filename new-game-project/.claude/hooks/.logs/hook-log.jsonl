@@ -25,3 +25,6 @@
 {"ts":"2026-07-19T06:28:32.620Z","hook":"simplify-gate","loc":744,"action":"warn"}
 {"ts":"2026-07-19T06:50:34.282Z","hook":"iteration-context","action":"skip","iterationCount":5,"reason":"no-tsv"}
 {"ts":"2026-07-19T06:56:59.656Z","hook":"iteration-context","action":"skip","iterationCount":6}
+{"ts":"2026-07-19T15:55:36.048Z","hook":"iteration-context","action":"skip","iterationCount":7}
+{"ts":"2026-07-19T16:19:57.640Z","hook":"iteration-context","action":"skip","iterationCount":8}
+{"ts":"2026-07-19T16:30:19.013Z","hook":"stop-notify","projectName":"new-game-project","duration":"unknown","iterations":0}

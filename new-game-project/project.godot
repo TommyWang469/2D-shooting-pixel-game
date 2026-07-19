@@ -22,6 +22,7 @@ GameManager="*res://autoload/game_manager.gd"
 Audio="*res://autoload/audio.gd"
 Juice="*res://autoload/juice.gd"
 Save="*res://autoload/save.gd"
+UiTheme="*res://autoload/ui_theme.gd"
 
 [display]
 

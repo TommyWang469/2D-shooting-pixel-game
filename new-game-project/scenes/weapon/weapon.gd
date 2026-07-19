@@ -20,6 +20,8 @@ class_name Weapon
 @export var homing := 0.0           ## rad/s steering toward nearby enemies
 @export var bounce := 0             ## times a bullet ricochets off walls
 @export var slow := 0.0             ## enemy speed factor applied on hit (0 = none)
+@export var bullet_tex := ""        ## custom projectile sprite (default bullet.png)
+@export var icon := ""              ## ground/shop icon (default silhouette)
 @export var power := 1              ## rough tier, used to weight chest drops
 
 const START_ID := "blaster"
@@ -28,70 +30,70 @@ const CATALOG := {
 	"blaster": {
 		"display_name": "Blaster", "damage": 1, "fire_rate": 5.0, "bullet_speed": 320.0,
 		"spread_deg": 4.0, "shots": 1, "fan_deg": 0.0, "pierce": 0, "knockback": 50.0,
-		"bullet_scale": 1.0, "bullet_life": 1.4, "bullet_color": Color(1.0, 0.9, 0.4), "power": 1,
+		"bullet_scale": 1.0, "bullet_life": 1.4, "bullet_color": Color(1.0, 0.9, 0.4), "icon": "res://assets/wpn_blaster.png", "power": 1,
 	},
 	"smg": {
 		"display_name": "SMG", "damage": 1, "fire_rate": 12.0, "bullet_speed": 380.0,
 		"spread_deg": 9.0, "shots": 1, "fan_deg": 0.0, "pierce": 0, "knockback": 26.0,
-		"bullet_scale": 0.85, "bullet_life": 1.1, "bullet_color": Color(0.5, 0.9, 1.0), "power": 2,
+		"bullet_scale": 0.85, "bullet_life": 1.1, "bullet_color": Color(0.5, 0.9, 1.0), "icon": "res://assets/wpn_smg.png", "power": 2,
 	},
 	"triple": {
 		"display_name": "Triple Shot", "damage": 2, "fire_rate": 5.0, "bullet_speed": 360.0,
 		"spread_deg": 3.0, "shots": 3, "fan_deg": 22.0, "pierce": 0, "knockback": 50.0,
-		"bullet_scale": 1.0, "bullet_life": 1.4, "bullet_color": Color(0.6, 1.0, 0.6), "power": 3,
+		"bullet_scale": 1.0, "bullet_life": 1.4, "bullet_color": Color(0.6, 1.0, 0.6), "icon": "res://assets/wpn_triple.png", "power": 3,
 	},
 	"shotgun": {
 		"display_name": "Shotgun", "damage": 1, "fire_rate": 2.2, "bullet_speed": 320.0,
 		"spread_deg": 5.0, "shots": 6, "fan_deg": 40.0, "pierce": 0, "knockback": 110.0,
-		"bullet_scale": 0.9, "bullet_life": 0.45, "bullet_color": Color(1.0, 0.7, 0.35), "power": 3,
+		"bullet_scale": 0.9, "bullet_life": 0.45, "bullet_color": Color(1.0, 0.7, 0.35), "icon": "res://assets/wpn_shotgun.png", "power": 3,
 	},
 	"piercer": {
 		"display_name": "Piercer", "damage": 2, "fire_rate": 6.0, "bullet_speed": 480.0,
 		"spread_deg": 2.0, "shots": 1, "fan_deg": 0.0, "pierce": 5, "knockback": 20.0,
-		"bullet_scale": 1.2, "bullet_life": 1.6, "bullet_color": Color(0.8, 0.6, 1.0), "power": 4,
+		"bullet_scale": 1.2, "bullet_life": 1.6, "bullet_color": Color(0.8, 0.6, 1.0), "icon": "res://assets/wpn_piercer.png", "power": 4,
 	},
 	"cannon": {
 		"display_name": "Cannon", "damage": 5, "fire_rate": 1.6, "bullet_speed": 280.0,
 		"spread_deg": 2.0, "shots": 1, "fan_deg": 0.0, "pierce": 1, "knockback": 180.0,
-		"bullet_scale": 2.3, "bullet_life": 1.8, "bullet_color": Color(1.0, 0.5, 0.4), "power": 5,
+		"bullet_scale": 2.3, "bullet_life": 1.8, "bullet_color": Color(1.0, 0.5, 0.4), "icon": "res://assets/wpn_cannon.png", "power": 5,
 	},
 	"wand": {
 		"display_name": "Homing Wand", "damage": 2, "fire_rate": 4.5, "bullet_speed": 240.0,
 		"spread_deg": 10.0, "shots": 1, "fan_deg": 0.0, "pierce": 0, "knockback": 30.0,
 		"bullet_scale": 1.1, "bullet_life": 2.2, "bullet_color": Color(1.0, 0.55, 0.9),
-		"homing": 5.5, "power": 4,
+		"homing": 5.5, "bullet_tex": "res://assets/shot_star.png", "icon": "res://assets/wpn_wand.png", "power": 4,
 	},
 	"railgun": {
 		"display_name": "Railgun", "damage": 4, "fire_rate": 1.3, "bullet_speed": 720.0,
 		"spread_deg": 0.5, "shots": 1, "fan_deg": 0.0, "pierce": 99, "knockback": 90.0,
-		"bullet_scale": 1.5, "bullet_life": 1.0, "bullet_color": Color(0.75, 0.95, 1.0), "power": 5,
+		"bullet_scale": 1.5, "bullet_life": 1.0, "bullet_color": Color(0.75, 0.95, 1.0), "bullet_tex": "res://assets/shot_beam.png", "icon": "res://assets/wpn_railgun.png", "power": 5,
 	},
 	"crossbow": {
 		"display_name": "Crossbow", "damage": 3, "fire_rate": 2.4, "bullet_speed": 520.0,
 		"spread_deg": 1.5, "shots": 1, "fan_deg": 0.0, "pierce": 1, "knockback": 120.0,
-		"bullet_scale": 1.2, "bullet_life": 1.2, "bullet_color": Color(0.85, 0.7, 0.45), "power": 3,
+		"bullet_scale": 1.2, "bullet_life": 1.2, "bullet_color": Color(0.85, 0.7, 0.45), "bullet_tex": "res://assets/shot_bolt.png", "icon": "res://assets/wpn_crossbow.png", "power": 3,
 	},
 	"flamer": {
 		"display_name": "Flame Spitter", "damage": 1, "fire_rate": 10.0, "bullet_speed": 210.0,
 		"spread_deg": 9.0, "shots": 2, "fan_deg": 12.0, "pierce": 0, "knockback": 14.0,
-		"bullet_scale": 1.25, "bullet_life": 0.34, "bullet_color": Color(1.0, 0.6, 0.2), "power": 4,
+		"bullet_scale": 1.25, "bullet_life": 0.34, "bullet_color": Color(1.0, 0.6, 0.2), "bullet_tex": "res://assets/shot_flame.png", "icon": "res://assets/wpn_flamer.png", "power": 4,
 	},
 	"ricochet": {
 		"display_name": "Ricochet", "damage": 2, "fire_rate": 3.5, "bullet_speed": 300.0,
 		"spread_deg": 4.0, "shots": 1, "fan_deg": 0.0, "pierce": 0, "knockback": 60.0,
 		"bullet_scale": 1.1, "bullet_life": 2.6, "bullet_color": Color(0.55, 1.0, 0.45),
-		"bounce": 3, "power": 4,
+		"bounce": 3, "bullet_tex": "res://assets/shot_disc.png", "icon": "res://assets/wpn_ricochet.png", "power": 4,
 	},
 	"frostbow": {
 		"display_name": "Frost Bow", "damage": 2, "fire_rate": 3.0, "bullet_speed": 400.0,
 		"spread_deg": 2.0, "shots": 1, "fan_deg": 0.0, "pierce": 0, "knockback": 70.0,
 		"bullet_scale": 1.15, "bullet_life": 1.4, "bullet_color": Color(0.6, 0.9, 1.0),
-		"slow": 0.55, "power": 4,
+		"slow": 0.55, "bullet_tex": "res://assets/shot_shard.png", "icon": "res://assets/wpn_frostbow.png", "power": 4,
 	},
 	"minigun": {
 		"display_name": "Minigun", "damage": 1, "fire_rate": 16.0, "bullet_speed": 430.0,
 		"spread_deg": 13.0, "shots": 1, "fan_deg": 0.0, "pierce": 0, "knockback": 12.0,
-		"bullet_scale": 0.8, "bullet_life": 0.9, "bullet_color": Color(1.0, 0.8, 0.5), "power": 5,
+		"bullet_scale": 0.8, "bullet_life": 0.9, "bullet_color": Color(1.0, 0.8, 0.5), "icon": "res://assets/wpn_minigun.png", "power": 5,
 	},
 }
 
@@ -167,4 +169,5 @@ func bullet_options() -> Dictionary:
 		"homing": homing,
 		"bounce": bounce,
 		"slow": slow,
+		"tex": bullet_tex,
 	}

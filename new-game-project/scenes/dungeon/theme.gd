@@ -8,9 +8,10 @@ const CATALOG := [
 	{
 		"name": "Stone Halls",
 		"ambient": Color(0.86, 0.85, 0.95),
-		"floor": Color(0.85, 0.85, 1.0),
-		"wall": Color(0.8, 0.78, 0.95),
+		"floor": Color(1.0, 1.0, 1.0),
+		"wall": Color(1.0, 1.0, 1.0),
 		"id": "stone",
+		"tiles": "stone",
 		"enemy_tint": Color(1.0, 1.0, 1.0),
 		"boss_tint": Color(1.0, 1.0, 1.0),
 		"hp_mult": 1.0,
@@ -24,9 +25,10 @@ const CATALOG := [
 	{
 		"name": "Ember Depths",
 		"ambient": Color(1.0, 0.84, 0.72),
-		"floor": Color(1.0, 0.72, 0.55),
-		"wall": Color(0.95, 0.55, 0.4),
+		"floor": Color(1.0, 0.92, 0.86),
+		"wall": Color(1.0, 0.9, 0.85),
 		"id": "ember",
+		"tiles": "ember",
 		"enemy_tint": Color(1.0, 0.62, 0.5),
 		"boss_tint": Color(1.0, 0.9, 0.85),   # unique art carries the identity now
 		"hp_mult": 1.1,
@@ -40,9 +42,10 @@ const CATALOG := [
 	{
 		"name": "Frost Crypt",
 		"ambient": Color(0.78, 0.88, 1.0),
-		"floor": Color(0.72, 0.88, 1.0),
-		"wall": Color(0.6, 0.78, 1.0),
+		"floor": Color(0.94, 0.98, 1.0),
+		"wall": Color(0.92, 0.96, 1.0),
 		"id": "frost",
+		"tiles": "frost",
 		"enemy_tint": Color(0.62, 0.85, 1.0),
 		"boss_tint": Color(0.9, 0.95, 1.0),   # unique art carries the identity now
 		"hp_mult": 1.35,
