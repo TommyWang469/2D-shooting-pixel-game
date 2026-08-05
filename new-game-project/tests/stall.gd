@@ -15,6 +15,7 @@ func _ready() -> void:
 func _run() -> void:
 	get_tree().create_timer(60.0, true, false, true).timeout.connect(func():
 		print("FAIL: stall test watchdog")
+		Audio.shutdown()
 		get_tree().quit(1))
 	await _frames(10)
 	var player := get_tree().get_first_node_in_group("player")
@@ -53,9 +54,11 @@ func _run() -> void:
 		if far.global_position.distance_to(player.global_position) < 150.0:
 			print("PASS: stall failsafe teleported straggler (%.1fs)"
 					% ((Time.get_ticks_msec() - t0) / 1000.0))
+			Audio.shutdown()
 			get_tree().quit(0)
 			return
 	print("FAIL: straggler never relocated")
+	Audio.shutdown()
 	get_tree().quit(1)
 
 

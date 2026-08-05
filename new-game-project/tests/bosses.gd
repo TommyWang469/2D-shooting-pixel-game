@@ -23,6 +23,7 @@ func _ready() -> void:
 func _run() -> void:
 	get_tree().create_timer(120.0, true, false, true).timeout.connect(func():
 		print("FAIL: bosses test watchdog")
+		Audio.shutdown()
 		get_tree().quit(1))
 	await _frames(10)
 	var player := get_tree().get_first_node_in_group("player")
@@ -50,7 +51,9 @@ func _run() -> void:
 		_check(boss.sprite.texture.resource_path.ends_with("boss_%s.png" % expected),
 				"%s: unique sprite (%s)" % [expected, boss.sprite.texture.resource_path.get_file()])
 
-		# let it fight in real time so async patterns (quake/eruption/spiral) run
+		# Let it fight in real time so async patterns (quake/eruption/spiral) run.
+		# Add signatures are triggered below if random selection did not choose them;
+		# the release check must not fail or pass based on RNG.
 		var t0 := Time.get_ticks_msec()
 		var fired := false
 		var adds := false
@@ -63,6 +66,10 @@ func _run() -> void:
 			if get_tree().get_nodes_in_group("enemies").size() > 1:
 				adds = true
 			player._invincible = 0.5   # stay alive, keep patterns coming
+		if expected != "ember" and not adds:
+			boss.call("_summon" if expected == "stone" else "_shards")
+			await _frames(2)
+			adds = get_tree().get_nodes_in_group("enemies").size() > 1
 		_check(fired, "%s: boss fired projectiles" % expected)
 		if expected != "ember":   # stone summons, frost spawns shards
 			_check(adds, "%s: boss spawned adds" % expected)
@@ -77,6 +84,7 @@ func _run() -> void:
 		await _frames(10)
 
 	print("BOSSES RESULT: ", "ALL PASS" if _fails == 0 else "FAIL (%d)" % _fails)
+	Audio.shutdown()
 	get_tree().quit(0 if _fails == 0 else 1)
 
 

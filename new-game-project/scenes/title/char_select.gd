@@ -10,7 +10,7 @@ var _cards: Array[Control] = []
 var _overlay: Control
 
 @onready var cards_box: HBoxContainer = $Cards
-@onready var gems_label: Label = $Gems
+@onready var gems_button: Button = $Gems
 
 
 func _ready() -> void:
@@ -20,6 +20,7 @@ func _ready() -> void:
 	Input.set_custom_mouse_cursor(null)
 	Audio.play_music("stone")
 	Save.gems_changed.connect(func(_g): _refresh_gems())
+	gems_button.pressed.connect(_open_upgrades)
 	_build_cards()
 	_refresh_gems()
 
@@ -39,16 +40,16 @@ func _build_cards() -> void:
 
 
 func _refresh_gems() -> void:
-	gems_label.text = "◆ %d gems" % Save.gems
+	gems_button.text = "◆ %d gems · UPGRADES" % Save.gems
 
 
 func _make_card(id: String, data: Dictionary) -> Control:
 	var locked := not Save.is_hero_unlocked(id)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(150, 190)
+	panel.custom_minimum_size = Vector2(150, 184)
 
 	var vb := VBoxContainer.new()
-	vb.add_theme_constant_override("separation", 6)
+	vb.add_theme_constant_override("separation", 4)
 	vb.alignment = BoxContainer.ALIGNMENT_CENTER
 	panel.add_child(vb)
 
@@ -57,7 +58,7 @@ func _make_card(id: String, data: Dictionary) -> Control:
 	atlas.atlas = load(data.get("sprite", "res://assets/player.png"))
 	atlas.region = Rect2(0, 0, 16, 16)
 	hero.texture = atlas
-	hero.custom_minimum_size = Vector2(64, 64)
+	hero.custom_minimum_size = Vector2(56, 56)
 	hero.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	if locked:
 		hero.modulate = Color(0.25, 0.25, 0.3)   # silhouette
@@ -108,7 +109,6 @@ func _select(i: int) -> void:
 	for j in _cards.size():
 		var sel := j == _index
 		_cards[j].modulate = Color.WHITE if sel else Color(0.55, 0.55, 0.6)
-		_cards[j].scale = Vector2(1.08, 1.08) if sel else Vector2.ONE
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -117,8 +117,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		Audio.play("click")
 		get_tree().change_scene_to_file("res://scenes/title/title.tscn")
-	elif event is InputEventKey and event.pressed and not event.echo \
-			and event.physical_keycode == KEY_U:
+	elif event.is_action_pressed("interact") or (event is InputEventKey \
+			and event.pressed and not event.echo and event.physical_keycode == KEY_U):
+		get_viewport().set_input_as_handled()
 		_open_upgrades()
 	elif event.is_action_pressed("ui_right") or event.is_action_pressed("move_right"):
 		_select(_index + 1)
@@ -133,6 +134,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _open_upgrades() -> void:
+	if is_instance_valid(_overlay):
+		return
 	Audio.play("click")
 	_overlay = UPGRADES_MENU.new()
 	add_child(_overlay)

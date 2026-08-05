@@ -173,4 +173,5 @@ func _frames(n: int) -> void:
 func _finish(code: int) -> void:
 	_restore_save()
 	print("SMOKE RESULT: ", "FAIL (%d)" % _fails if code != 0 else "ALL PASS")
+	Audio.shutdown()
 	get_tree().quit(code)

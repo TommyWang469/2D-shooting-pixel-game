@@ -14,4 +14,5 @@ func _run() -> void:
 	var before := Save.gems
 	Save.add_gems(5)
 	print("PERSIST: booted_with=%d banked_5 now=%d" % [before, Save.gems])
+	Audio.shutdown()
 	get_tree().quit(0)

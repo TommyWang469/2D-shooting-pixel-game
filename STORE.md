@@ -1,4 +1,4 @@
-# Pixel Dungeon Blaster — Store & Publishing Guide
+# Threefold Arsenal — Store & Publishing Guide
 
 ## Store page copy (itch.io)
 
@@ -31,16 +31,26 @@ content (more chapters/heroes). Soul-Knight-likes monetize on volume, not price.
 
 ## Publishing checklist
 
-1. **Export templates** (one-time): Godot editor → Editor → Manage Export
-   Templates → Download for 4.7.
-2. **Web build** (primary — plays in browser, most itch traffic):
-   `Godot --headless --path new-game-project --export-release "Web"` →
-   `build/web/index.html`. Zip the folder, upload to itch, tick
-   "This file will be played in the browser".
-3. **Desktop builds:** run the macOS / Windows presets the same way.
+0. **Final store name:** Threefold Arsenal. Project name, title screen, package
+   filenames, bundle ID, product metadata, and store copy use the same branding.
+   Exact-title storefront searches found no current game collision; do a formal
+   trademark check before a larger commercial launch.
+1. **Export templates:** the official Godot 4.7-stable templates are installed
+   on this build Mac. On a new machine, use Godot editor → Editor → Manage
+   Export Templates and install the templates matching the editor version.
+2. **Web build** (primary — plays in browser, most itch traffic): upload
+   `build/ThreefoldArsenal-Web.zip` and tick "This file will be played in the
+   browser". Its `index.html` is at the archive root.
+3. **Desktop builds:** upload `build/macos/ThreefoldArsenal.zip` for macOS and
+   `build/windows/ThreefoldArsenal-Windows-x86_64.zip` for Windows.
 4. **Page assets:** capture 3–5 GIFs/screenshots — title, each biome, a boss
    fight, the upgrades menu. 630×500 cover image.
-5. **Butler** (optional, for updates): `butler push build/web user/pixel-dungeon-blaster:web`.
+5. **Butler** (optional, for updates): `butler push build/web user/threefold-arsenal:web`.
+
+The current v1.1.0 Web, macOS, and Windows packages were exported and validated
+with Godot 4.7-stable. The macOS package is ad-hoc signed; Apple notarization and
+Windows code signing require your own developer certificates before a signed
+store release.
 
 ## Post-launch content ideas (roadmap for paid tier)
 - Chapters 4–6 (new biomes: Verdant Overgrowth, Void Sanctum…)

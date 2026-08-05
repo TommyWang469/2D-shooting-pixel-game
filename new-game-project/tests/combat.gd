@@ -33,4 +33,5 @@ func _process(delta: float) -> void:
 		_done = true
 		print("PASS: organic combat kills=", GameManager.kills) if GameManager.kills > 0 \
 				else print("FAIL: no kills in organic combat")
+		Audio.shutdown()
 		get_tree().quit(0 if GameManager.kills > 0 else 1)

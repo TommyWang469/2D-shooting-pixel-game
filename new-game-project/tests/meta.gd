@@ -136,4 +136,5 @@ func _frames(n: int) -> void:
 func _finish(code: int) -> void:
 	_restore_save()
 	print("META RESULT: ", "ALL PASS" if code == 0 else "FAIL (%d)" % _fails)
+	Audio.shutdown()
 	get_tree().quit(code)

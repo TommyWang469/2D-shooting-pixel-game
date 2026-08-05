@@ -1,4 +1,4 @@
-# Pixel Dungeon Blaster — Plan & Devlog
+# Threefold Arsenal — Plan & Devlog
 
 A Soul Knight–style top-down twin-stick roguelite built in **Godot 4.7** (GDScript).
 Move with WASD, aim with the mouse, shoot to kill enemies, collect coins & hearts,

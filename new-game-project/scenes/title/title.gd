@@ -76,6 +76,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
 			KEY_ESCAPE:
+				Audio.shutdown()
 				get_tree().quit()
 			KEY_S:
 				_open_settings()

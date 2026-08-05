@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate all pixel-art sprite sheets for Pixel Dungeon Blaster.
+"""Generate all pixel-art sprite sheets for Threefold Arsenal.
 
 Every sheet lays frames out horizontally so Godot can use Sprite2D.hframes.
 Run:  python3 tools/gen_art.py

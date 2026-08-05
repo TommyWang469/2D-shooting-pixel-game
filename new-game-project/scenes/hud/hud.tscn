@@ -189,13 +189,13 @@ color = Color(0.85, 0.25, 0.3, 1)
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 8.0
-offset_top = -22.0
-offset_right = 474.0
-offset_bottom = -6.0
+offset_top = -30.0
+offset_right = 472.0
+offset_bottom = -4.0
 mouse_filter = 2
 modulate = Color(1, 1, 1, 0.5)
-theme_override_font_sizes/font_size = 11
-text = "WASD move · Mouse aim · Click shoot · Space dash · E pick up / buy · Q cycle weapons · Esc pause"
+theme_override_font_sizes/font_size = 9
+text = "KBM  WASD move · Mouse aim/fire · Space dash · E use · Q swap · Esc pause\nPAD  LS move · RS aim · RT fire · B dash · X use · Y swap · Start pause"
 
 [node name="Banner" type="Control" parent="."]
 anchor_right = 1.0

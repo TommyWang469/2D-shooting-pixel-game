@@ -65,6 +65,29 @@ func _ready() -> void:
 	add_child(_music)
 
 
+func _exit_tree() -> void:
+	shutdown()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		shutdown()
+
+
+func shutdown() -> void:
+	# Release active playbacks before Godot tears down the audio server.
+	if is_instance_valid(_music):
+		_music.stop()
+		_music.stream = null
+	for player in _pool:
+		player.stop()
+		player.stream = null
+	_pool.clear()
+	_tracks.clear()
+	_streams.clear()
+	_current_track = ""
+
+
 func _ensure_bus(bus_name: String) -> void:
 	if AudioServer.get_bus_index(bus_name) >= 0:
 		return
