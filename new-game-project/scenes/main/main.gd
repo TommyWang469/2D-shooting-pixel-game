@@ -31,7 +31,7 @@ var _ambient: CPUParticles2D
 func _ready() -> void:
 	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	Input.set_custom_mouse_cursor(load("res://assets/crosshair.png"),
-			Input.CURSOR_ARROW, Vector2(7, 7))
+			Input.CURSOR_ARROW, Vector2(15, 15))
 	GameManager.reset_game()
 	hud.bind_player(player)
 	GameManager.room_changed.connect(func(_r): _regen_room())

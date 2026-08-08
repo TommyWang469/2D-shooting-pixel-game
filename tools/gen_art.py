@@ -1404,19 +1404,22 @@ def gen_gem():
     img.save(os.path.join(OUT, "gem.png"))
 
 
-# ---------------------------------------------------------------- crosshair 15x15
+# ---------------------------------------------------------------- crosshair 31x31
 def gen_crosshair():
-    # Open-center crosshair cursor: 4 ticks + corner dots, white with dark outline.
-    W = H = 15
+    # Large open-center crosshair: thick white ticks with a dark outline.
+    W = H = 31
     img = Image.new("RGBA", (W, H), T)
     px = img.load()
     c = W // 2
-    for i in range(2, 6):
-        px[c, i] = WHITE            # top tick
-        px[c, H - 1 - i] = WHITE    # bottom
-        px[i, c] = WHITE            # left
-        px[W - 1 - i, c] = WHITE    # right
-    px[c, c] = (255, 255, 255, 90)  # faint center dot
+    for i in range(4, 12):
+        for thickness in (-1, 0, 1):
+            px[c + thickness, i] = WHITE
+            px[c + thickness, H - 1 - i] = WHITE
+            px[i, c + thickness] = WHITE
+            px[W - 1 - i, c + thickness] = WHITE
+    for y in range(c - 1, c + 2):
+        for x in range(c - 1, c + 2):
+            px[x, y] = (255, 255, 255, 150)
     outline(px, W, H, 0, 0)
     img.save(os.path.join(OUT, "crosshair.png"))
 
