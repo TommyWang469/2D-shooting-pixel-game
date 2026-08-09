@@ -7,7 +7,7 @@ Output: new-game-project/assets/*.png
 """
 import os
 import math
-from PIL import Image
+from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.normpath(os.path.join(HERE, "..", "new-game-project", "assets"))
@@ -1404,22 +1404,16 @@ def gen_gem():
     img.save(os.path.join(OUT, "gem.png"))
 
 
-# ---------------------------------------------------------------- crosshair 31x31
+# ---------------------------------------------------------------- cursor 31x31
 def gen_crosshair():
-    # Large open-center crosshair: thick white ticks with a dark outline.
+    # Bold arrow cursor: the top-left tip is the exact aim point.
     W = H = 31
     img = Image.new("RGBA", (W, H), T)
+    ImageDraw.Draw(img).polygon(
+        [(2, 2), (2, 25), (8, 19), (14, 29), (19, 26), (13, 17), (26, 17)],
+        fill=WHITE,
+    )
     px = img.load()
-    c = W // 2
-    for i in range(4, 12):
-        for thickness in (-1, 0, 1):
-            px[c + thickness, i] = WHITE
-            px[c + thickness, H - 1 - i] = WHITE
-            px[i, c + thickness] = WHITE
-            px[W - 1 - i, c + thickness] = WHITE
-    for y in range(c - 1, c + 2):
-        for x in range(c - 1, c + 2):
-            px[x, y] = (255, 255, 255, 150)
     outline(px, W, H, 0, 0)
     img.save(os.path.join(OUT, "crosshair.png"))
 
